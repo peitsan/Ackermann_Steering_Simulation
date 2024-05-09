@@ -1,43 +1,44 @@
 function ackerman_plotting(t, state_history, control_history, l, w)
-% 绘制Ackermann转向仿真结果的图形
 
-x = state_history(1, :); % 获取车辆的x坐标
-y = state_history(2, :); % 获取车辆的y坐标
-theta = state_history(3, :); % 获取车辆的方向角
-phi = state_history(4, :); % 获取车辆的转向角
-v = state_history(5, :); % 获取车辆的速度
+x = state_history(1, :);
+y = state_history(2, :);
+theta = state_history(3, :);
+phi = state_history(4, :);
+v = state_history(5, :);
+v_l = v .* (1 + tan(phi)/2);
+v_r = v .* (1 - tan(phi)/2);
 
-F = control_history(1, :); % 获取输入力
-dphi = control_history(2, :); % 获取转向角变化率
 
-figure(1)
-clf;
+F = control_history(1, :);
+dphi = control_history(2, :);
+
+figure(2)
 subplot(3, 2, 1);
-patch(t, [x; y]');
-xlabel('时间')
-ylabel('位置 (m)')
+patch(t, x, y, 'b');
+xlabel('Time')
+ylabel('Position (m)')
 legend('X', 'Y')
 
 subplot(3, 2, 2);
-patch(t, [theta; phi]');
-xlabel('时间')
-ylabel('方向 (rad)');
+patch(t, theta, phi, 'b');
+xlabel('Time')
+ylabel('Orientation (rad)');
 legend('Theta', 'Phi');
 
 subplot(3, 2, 3);
-patch(t, v);
-xlabel('时间');
-ylabel('速度 (m/s)');
+patch(t, v, 'b');
+xlabel('Time');
+ylabel('Velocity (m/s)');
 
 subplot(3, 2, 5);
-patch(t(2:end), F);
-xlabel('时间');
-ylabel('输入力 (N)');
+patch(t(2:end), F, 'b');
+xlabel('Time');
+ylabel('Input Force (N)');
 
 subplot(3, 2, 6);
-patch(t(2:end), dphi);
-xlabel('时间');
-ylabel('转向角变化率 (rad/s)');
+patch(t(2:end), dphi, 'b');
+xlabel('Time');
+ylabel('Steering Angle Change (rad/s)');
 
 subplot(3, 2, 4);
 hold on
@@ -48,4 +49,23 @@ axis equal
 xlabel('X (m)');
 ylabel('Y (m)');
 
+figure(3)
+clf
+subplot(2, 1, 1);
+plot(t, v_l);
+hold on
+plot(t, v_r);
+hold off
+legend('Left Wheel', 'Right Wheel');
+xlabel('Time');
+ylabel('Wheel Velocity (m/s)');
+
+subplot(2, 1, 2);
+plot(t, theta);
+hold on
+plot(t, phi);
+hold off
+legend('轮子离轴线切向角', '轮子离轴线法向角');
+xlabel('Time (s)');
+ylabel('Angle (m/s)');
 end

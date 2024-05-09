@@ -17,19 +17,20 @@ function dstate = ackerman_dynamics(state, control, l, M1, M2)
 
 x = state(1);
 y = state(2);
-theta = state(3);
+theta = state(3); %
 phi = state(4);
-v = state(5);
+v = state(5); 
+
 
 F = control(1);
 u = control(2);
 
-dx = v * cos(theta);
+dx = v * cos(theta);  
 dy = v * sin(theta);
 dtheta = v/l * tan(phi);
 dphi = u;
 dv = (F - M2 * dphi * sin(phi) / cos(phi)^3) / (M1 + M2 + M2 * tan(phi)^2);
-
+dv_l = v * (1 + tan(phi)/2);
 dstate = [dx; dy; dtheta; dphi; dv];
 
 end
