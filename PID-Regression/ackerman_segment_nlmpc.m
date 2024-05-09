@@ -43,40 +43,43 @@ for k = 1:Tsteps
     end
     
     % 计算误差和误差变化率
-    error = y_ref(k, :) - xk(1:3)';
-    if k == 1  
-        error_rate = zeros(3, 1);
-    else
-        error_rate = (error - (xk(1:3)' - x_history(1:3, k-1))) / Ts;
+    error = y_ref(k, :) - xk(1:3); % 计算位置误差
+    error_rate = zeros(3, 1);
+    if k > 1  % 如果不是第一步
+        error_rate = (xk - x_history(:, k-1)) / Ts;   % 计算误差变化率
     end
     
     % PID控制器参数
-    Kp = [1, 1, 0.5];  % 比例增益
-    Ki = [0.1, 0.1, 0.05];  % 积分增益
-    Kd = [0, 0, 0.1];  % 微分增益，对于角度通常微分项较小或为0
+    Kp = [6.3, 10.75, 13.58];  % 比例增益
+    Ki = [0.72, 0.63, 0.55];  % 积分增益
+    Kd = [0.028, 0.045, 0.12];  % 微分增益，对于角度通常微分项较小或为0
 
-    % 计算控制输入
+    % 计算控制输入  
      % 确保error和error_rate是列向量
      error_col = error(:);
      error_rate_col = error_rate(:);
- 
+    
      % 计算积分项时，确保cumsum返回的是向量
-     integral_error = cumsum(error_col) * Ts;
+     integral_error = cumsum(error, 1) * Ts;
      
-     % 逐元素乘法和加法
-    %  uk = Kp .* [error(1), error(2)] + Ki .* cumsum([error(1), error(2)], 1) * Ts + Kd .* [error_rate(1), error_rate(2)];
-     %uk = Kp .* error + Ki .* cumsum(error, 1) * Ts + Kd .* error_rate;
-     uk = zeros(2, 1);  % 初始化控制输入向量
-     uk(1) = Kp(1) * error(1) + Ki(1) * cumsum(error(1), 1) * Ts + Kd(1) * error_rate(1);  % 速度控制量
-     uk(2) = Kp(2) * error(2) + Ki(2) * cumsum(error(2), 1) * Ts + Kd(2) * error_rate(2);  % 转向角控制量
+        % 动态调整nlopt参数
+        nlopt.OutputWeights = 10 .* (1 + Kp .* abs(error_col));
+        % 动态调整MVRateWeights，确保它是一个2x1的向量
+        Kd_adjusted = [Kd(1), Kd(2)];  % 取Kd的前两个元素
+        nlopt.MVRateWeights = max(1, [1 .* (1 + Kd_adjusted .* abs(error_rate_col))])';
+        % 由于nlopt.MVRateWeights需要是1x2，我们确保它不会因为Kd的维度而改变
+        nlopt.MVRateWeights = nlopt.MVRateWeights(1:2);  % 取前两个元素
+        % 调用nlmpcmove
+        [uk, nlopt, info] = nlmpcmove(nlobj, xk, u_prev, y_ref(k:k+ph-1, :), [], nlopt);
 
      % 确保uk是一个两元素的列向量
      u_history(:, k) = uk;  % 存储控制输入
      u_prev = uk;  % 更新上一步的控制输入
     
-    ODEFUN = @(t, xk) ackerman_dynamics(xk, uk, l, M1, M2);  % 定义ODE函数
-    [TOUT, YOUT] = ode45(ODEFUN,[0 Ts], xk');  % 使用ODE求解状态方程
-    x_history(:, k+1) = YOUT(end, :);  % 存储下一步的状态
+     % 使用ODE求解状态方程
+     ODEFUN = @(t, xk) ackerman_dynamics(xk, uk, l, M1, M2);
+     [TOUT, YOUT] = ode45(ODEFUN,[0 Ts], xk');
+     x_history(:, k+1) = YOUT(end, :);  % 存储下一步的状态
     waitbar(k/Tsteps, hbar);  % 更新进度条
 end
 close(hbar)  % 关闭进度条

@@ -22,7 +22,7 @@ med = 7; % m/s (27 kph, 16.777 mph)
 fast = 15; % m/s (54 kph, 33.554 mph)
 vfast = 20; % m/s (72 kph, 44.738 mph)
 % dscale = 9; % se2_spline 使用的参数，定义生成的参考样条曲线的“曲折度” pi/10
-dscale = 13.3; % se2_spline 使用的参数，定义生成的参考样条曲线的“曲折度”
+dscale = 12.9; % se2_spline 使用的参数，定义生成的参考样条曲线的“曲折度”
 
 M = 1;
 M1 = M/2;
@@ -74,12 +74,6 @@ nlobj.ManipulatedVariables(1).Max = 20;
 
 nlobj.ManipulatedVariables(2).Name = 'Steering Change';
 nlobj.ManipulatedVariables(2).Units = 'Rad / Second';
-
-% nlobj.ManipulatedVariables(3).Name = 'Left Wheel Velocity'; % 左轮速度
-% nlobj.ManipulatedVariables(3).Units = 'Meters / Second';
-% 
-% nlobj.ManipulatedVariables(4).Name = 'Right Wheel Velocity'; % 右轮速度
-% nlobj.ManipulatedVariables(4).Units = 'Meters / Second';
 
 % 定义雅可比矩阵函数
 nlobj.Jacobian.StateFcn = @ackerman_state_jacobian;
@@ -171,7 +165,7 @@ tc = 0:Ts:(size(ex1.fast.x_history,2)-1)*Ts;
 ackerman_plotting(tc, ex1.fast.x_history, ex1.fast.u_history, l, w);
 
 
-%% 打印实验 1 和实验 2 的最终速度
+%% 打印实验 1 的最终速度
 fprintf('Experiment 1 final velocities\n');
 fprintf('Slow:   %g\n', ex1.slow.x_history(5, end));
 fprintf('Medium: %g\n', ex1.med.x_history(5, end));
