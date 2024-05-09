@@ -112,8 +112,9 @@ fprintf(sprintf('Ex 1 Start, Goal dist: %g\n', se2_dist(ex1.y0, ex1.y1)))
 % 定义颜色
 ex1.ref_color = 'k';
 ex1.slow.color = 'b';
-ex1.med.color = 'm';
-ex1.fast.color = 'r';
+ex1.med.color = 'g';
+ex1.fast.color = 'm';
+ex1.vfast.color = 'r';
 
 % 计算持续时间、时间步长，并生成参考轨迹
 duration = se2_dist(ex1.y0, ex1.y1) / 5.0;
@@ -155,9 +156,6 @@ plot_car_traj(ex1.fast.x_history, l, w, ex1.fast.color);
 title(sprintf('Fast start v = %g', ex1.fast.x0(end)))
 drawnow
 
-tc = 0:Ts:(size(ex1.fast.x_history,2)-1)*Ts;
-ackerman_plotting(tc, ex1.fast.x_history, ex1.fast.u_history, l, w);
-
 %% 实验 1 - 超速
 [ex1.vfast.x_history, ex1.vfast.u_history] = ...
     ackerman_segment_nlmpc(nlobj, nlopt, ex1.vfast.x0, ex1.y1, l, M1, M2, dscale);
@@ -167,6 +165,11 @@ subplot(2, 2, 4);
 plot_car_traj(ex1.vfast.x_history, l, w, ex1.vfast.color);
 title(sprintf('Vast Fast start v = %g', ex1.vfast.x0(end)))
 drawnow
+
+%% 绘制快速轨迹的正运动学参数
+tc = 0:Ts:(size(ex1.fast.x_history,2)-1)*Ts;
+ackerman_plotting(tc, ex1.fast.x_history, ex1.fast.u_history, l, w);
+
 
 %% 打印实验 1 和实验 2 的最终速度
 fprintf('Experiment 1 final velocities\n');
