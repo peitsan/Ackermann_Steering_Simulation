@@ -119,42 +119,16 @@ Tsteps = ceil(duration / Ts);
 ex1.y_ref = se2_spline(ex1.y0, ex1.y1, Tsteps, dscale);
 ex1.lifted_y_ref = [ex1.y_ref; zeros(2, Tsteps + 1)];
 
-%% 实验 2 设置
-ex2.l = l;
-ex2.w = w;
-ex2.obstacle.bl = [1, 3];
-ex2.obstacle.tr = [5, 4];
-ex2.y0 = [0; 0; pi/2];
-ex2.y1 = [4; 0; -pi/2];
-ex2.slow.x0 = [ex2.y0; 0; slow];
-ex2.med.x0 = [ex2.y0; 0; med];
-ex2.fast.x0 = [ex2.y0; 0; fast];
-
-% 打印实验 2 开始和起点到终点的距离
-fprintf(sprintf('Ex 2 Start, Goal dist: %g\n', se2_dist(ex2.y0, ex2.y1)))
-
-% 定义颜色
-ex2.ref_color = 'k';
-ex2.slow.color = 'b';
-ex2.med.color = 'm';
-ex2.fast.color = 'r';
-
-% 计算持续时间、时间步长，并生成参考轨迹
-duration = se2_dist(ex2.y0, ex2.y1) / 5.0;
-Tsteps = ceil(duration / Ts);
-ex2.y_ref = se2_spline(ex2.y0, ex2.y1, Tsteps, dscale);
-ex2.lifted_y_ref = [ex2.y_ref; zeros(2, Tsteps + 1)];
-
 %% 绘制环境
 figure(1); clf
-plot_env(ex1, ex2);
+plot_env(ex1);
 
 %% 实验 1 - 慢速
 [ex1.slow.x_history, ex1.slow.u_history] = ...
     ackerman_segment_nlmpc(nlobj, nlopt, ex1.slow.x0, ex1.y1, l, M1, M2, dscale);
 
 %% 绘制慢速轨迹
-subplot(2, 3, 1);
+subplot(1, 3, 1);
 plot_car_traj(ex1.slow.x_history, l, w, ex1.slow.color);
 title(sprintf('Slow start v = %g', ex1.slow.x0(end)))
 drawnow
@@ -164,7 +138,7 @@ drawnow
     ackerman_segment_nlmpc(nlobj, nlopt, ex1.med.x0, ex1.y1, l, M1, M2, dscale);
 
 %% 绘制中速轨迹
-subplot(2, 3, 2);
+subplot(1, 3, 2);
 plot_car_traj(ex1.med.x_history, l, w, ex1.med.color);
 title(sprintf('Medium start v = %g', ex1.med.x0(end)))
 drawnow
@@ -174,7 +148,7 @@ drawnow
     ackerman_segment_nlmpc(nlobj, nlopt, ex1.fast.x0, ex1.y1, l, M1, M2, dscale);
 
 %% 绘制快速轨迹
-subplot(2, 3, 3);
+subplot(1, 3, 3);
 plot_car_traj(ex1.fast.x_history, l, w, ex1.fast.color);
 title(sprintf('Fast start v = %g', ex1.fast.x0(end)))
 drawnow
@@ -187,11 +161,7 @@ fprintf('Experiment 1 final velocities\n');
 fprintf('Slow:   %g\n', ex1.slow.x_history(5, end));
 fprintf('Medium: %g\n', ex1.med.x_history(5, end));
 fprintf('Fast:   %g\n', ex1.fast.x_history(5, end));
-fprintf('\nExperiment 2 final velocities\n');
-% fprintf('Slow:   %g\n', ex2.slow.x_history(5, end));
-% fprintf('Medium: %g\n', ex2.med.x_history(5, end));
-% fprintf('Fast:   %g\n', ex2.fast.x_history(5, end));
 
 %% 播放轨迹动画
 
-play_trajectories(ex1,ex2);
+play_trajectories(ex1);
