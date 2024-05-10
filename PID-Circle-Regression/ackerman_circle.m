@@ -42,7 +42,7 @@ nlobj.ControlHorizon = mpc_horizon;
 
 nlobj.Model.IsContinuousTime = true;
 nlobj.Model.NumberOfParameters = 3;
-nlobj.Model.StateFcn = @ackerman_dynamics;
+nlobj.Model.StateFcn = @ackerman_ik_dynamics;
 nlobj.Model.OutputFcn = @(state, control, l, M1, M2) state(1:3);
 
 % 定义状态变量

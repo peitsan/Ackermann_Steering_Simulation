@@ -47,7 +47,7 @@ for k = 1:Tsteps
     u_history(:, k) = uk;
     u_prev = uk;
     
-    ODEFUN = @(t, xk) ackerman_dynamics(xk, uk, l, M1, M2);
+    ODEFUN = @(t, xk) ackerman_ik_dynamics(xk, uk, l, M1, M2);
     [TOUT, YOUT] = ode45(ODEFUN,[0 Ts], xk');
     x_history(:, k+1) = YOUT(end, :);
     waitbar(k/Tsteps, hbar);

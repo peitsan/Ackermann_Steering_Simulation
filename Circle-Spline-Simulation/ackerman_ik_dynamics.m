@@ -1,4 +1,4 @@
-function dstate = ackerman_dynamics(state, control, l, M1, M2)
+function dstate = ackerman_ik_dynamics(state, control, l, M1, M2)
 %ACKERMAN_DYNAMICS - 从https://ieeexplore.ieee.org/document/7075182中获取
 %   params(1) = l       车辆长度
 %   params(2) = M1      车辆后轴上的质量
@@ -30,7 +30,7 @@ dy = v * sin(theta);
 dtheta = v/l * tan(phi);
 dphi = u;
 dv = (F - M2 * dphi * sin(phi) / cos(phi)^3) / (M1 + M2 + M2 * tan(phi)^2);
-dv_l = v * (1 + tan(phi)/2);
+% dv_l = v * (1 + tan(phi)/2);
 dstate = [dx; dy; dtheta; dphi; dv];
 
 end

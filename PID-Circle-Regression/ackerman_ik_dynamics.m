@@ -1,4 +1,4 @@
-function dstate = ackerman_dynamics(state, control, l, M1, M2)
+function dstate = ackerman_ik_dynamics(state, control, l, M1, M2)
 %ACKERMAN_DYNAMICS - 从https://ieeexplore.ieee.org/document/7075182中获取
 %   params(1) = l       车辆长度
 %   params(2) = M1      车辆后轴上的质量

@@ -20,13 +20,7 @@ u_prev = [0; 0];  % 上一步的控制输入
 y_ref = se2_spline(x0(1:3), y_target, Tsteps, dscale)';  % 生成参考目标点
 y_ref = y_ref(2:end, :);  % 去除起点
 
-% dist = se3_dist(x0(1:3), y_target);
-% delta = se3_delta(x0(1:3), y_target);
-% dx = linspace(0, delta(1), Tsteps + 1);
-% dy = linspace(0, delta(2), Tsteps + 1);
-% dtheta = linspace(0, delta(3), Tsteps + 1);
-% y_ref = ones(Tsteps + 1, 1) * x0(1:3)' + [dx', dy', dtheta'];
-% y_ref = y_ref(2:end, :);
+
 
 hbar = waitbar(0,'Simulation Progress');  % 进度条
 for k = 1:Tsteps
@@ -46,7 +40,7 @@ for k = 1:Tsteps
     u_history(:, k) = uk;  % 存储控制输入
     u_prev = uk;  % 更新上一步的控制输入
     
-    ODEFUN = @(t, xk) ackerman_dynamics(xk, uk, l, M1, M2);  % 定义ODE函数
+    ODEFUN = @(t, xk) ackerman_ik_dynamics(xk, uk, l, M1, M2);  % 定义ODE函数
     [TOUT, YOUT] = ode45(ODEFUN,[0 Ts], xk');  % 使用ODE求解状态方程
     x_history(:, k+1) = YOUT(end, :);  % 存储下一步的状态
     waitbar(k/Tsteps, hbar);  % 更新进度条

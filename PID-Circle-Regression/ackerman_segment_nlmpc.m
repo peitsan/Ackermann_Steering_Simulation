@@ -77,7 +77,7 @@ for k = 1:Tsteps
      u_prev = uk;  % 更新上一步的控制输入
     
      % 使用ODE求解状态方程
-     ODEFUN = @(t, xk) ackerman_dynamics(xk, uk, l, M1, M2);
+     ODEFUN = @(t, xk) ackerman_ik_dynamics(xk, uk, l, M1, M2);
      [TOUT, YOUT] = ode45(ODEFUN,[0 Ts], xk');
      x_history(:, k+1) = YOUT(end, :);  % 存储下一步的状态
     waitbar(k/Tsteps, hbar);  % 更新进度条
