@@ -162,8 +162,11 @@ drawnow
 
 %% 绘制快速轨迹的正运动学参数
 tc = 0:Ts:(size(ex1.fast.x_history,2)-1)*Ts;
-ackerman_plotting(tc, ex1.fast.x_history, ex1.fast.u_history, l, w);
 
+ackerman_plotting(tc, ex1.slow.x_history, ex1.slow.u_history, l, w,2,3,4);
+ackerman_plotting(tc, ex1.med.x_history, ex1.med.u_history, l, w,5,6,7);
+ackerman_plotting(tc, ex1.fast.x_history, ex1.fast.u_history, l, w,8,9,10);
+ackerman_plotting(tc, ex1.vfast.x_history, ex1.vfast.u_history, l, w,11,12,13);
 
 %% 打印实验 1 的最终速度
 fprintf('Experiment 1 final velocities\n');

@@ -1,18 +1,18 @@
-function ackerman_plotting(t, state_history, control_history, l, w)
+function ackerman_plotting(t, state_history, control_history, l,w, a,b,c)
 
 x = state_history(1, :);
 y = state_history(2, :);
 theta = state_history(3, :);
 phi = state_history(4, :);
 v = state_history(5, :);
-v_l = v .* (1 + tan(phi)/2);
-v_r = v .* (1 - tan(phi)/2);
+v_l = v .* (1 + tan(theta)/2);
+v_r = v .* (1 - tan(theta)/2);
 
 
 F = control_history(1, :);
 dphi = control_history(2, :);
 
-figure(2)
+figure(a)
 subplot(3, 2, 1);
 patch(t, x, y, 'b');
 xlabel('Time')
@@ -49,15 +49,17 @@ axis equal
 xlabel('X (m)');
 ylabel('Y (m)');
 
-figure(3)
+figure(b)
 clf
 subplot(2, 1, 1);
 plot(t, v_l);
 hold on
 plot(t, v_r);
+hold on
+plot(t, v);
 hold off
 grid on
-legend('左轮速度', '右轮速度');
+legend('左轮速度', '右轮速度','质心速度');
 xlabel('Time');
 ylabel('Wheel Velocity (m/s)');
 
@@ -71,4 +73,29 @@ grid on
 legend('质心偏转角', '前轮横摆角');
 xlabel('Time (s)');
 ylabel('Angle (°)');
+
+% 目标轨迹的圆心和半径
+circle_center = [0, 0];
+circle_radius = 2;
+
+% 计算目标轨迹上的点（使用极坐标方程）
+theta = linspace(0, 2*pi, 1000); % 生成1000个点在圆上
+circle_x = circle_center(1) + circle_radius * cos(theta);
+circle_y = circle_center(2) + circle_radius * sin(theta);
+
+% 计算小车轨迹上每个点到目标轨迹圆心的距离
+distance_to_circle_center = sqrt(x.^2 + y.^2);
+
+% 计算误差：小车轨迹上每个点到圆心的距离与目标半径的差
+error = distance_to_circle_center - circle_radius;
+
+% 绘制误差图
+figure(c);
+plot(error, 'LineWidth', 2);
+title('小车轨迹与目标圆形轨迹的误差');
+xlabel('轨迹点序号');
+ylabel('误差 (单位: 米)');
+
+fprintf('误差平均值:   %g\n', mean(error));
+
 end

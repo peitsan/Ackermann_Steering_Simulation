@@ -4,7 +4,7 @@ function play_trajectories(ex1)
 max_t = size(ex1.y_ref, 2);
 
 for idx = 1:max_t
-    figure(5)
+    figure(18)
     clf
     plot_env(ex1)
     ex1_idx = min(idx, size(ex1.y_ref, 2));
