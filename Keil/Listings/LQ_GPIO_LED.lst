@@ -1,0 +1,169 @@
+C251 COMPILER V5.60.0,  LQ_GPIO_LED                                                        27/05/24  09:23:04  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE LQ_GPIO_LED
+OBJECT MODULE PLACED IN .\Objects\LQ_GPIO_LED.obj
+COMPILER INVOKED BY: E:\_app\Keil5\C251\BIN\C251.EXE LQ_lib\app\LQ_GPIO_LED.c XSMALL INTR2 BROWSE INCDIR(.\user;.\LQ_lib
+                    -\app;.\LQ_lib\ddc;.\LQ_lib\driver) DEBUG PRINT(.\Listings\LQ_GPIO_LED.lst) OBJECT(.\Objects\LQ_GPIO_LED.obj) 
+
+stmt  level    source
+
+    1          /*LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+    2           【平    台】北京龙邱智能科技STC32G12K128 LQFP64核心板
+    3           【编    写】chiusir
+    4           【E-mail  】chiusir@163.com
+    5           【软件版本】V1.1 版权所有，单位使用请先联系授权
+    6           【最后更新】2022年3月8日
+    7           【相关信息参考下列地址】
+    8           【网    站】http://www.lqist.cn
+    9           【淘宝店铺】http://longqiu.taobao.com
+   10           ------------------------------------------------
+   11           【IDE】STC32
+   12           【Target 】 keil5.2及以上
+   13           【SYS PLL】 35MHz使用内部晶振，通过
+   14          =================================================================
+   15          stc-isp下载时, 选择时钟 35MHZ
+   16          QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ*/
+   17          
+   18          #include "include.h"
+   19          #include "LQ_GPIO.h"
+   20          
+   21          
+   22          /*************************************************************************
+   23          *  函数名称：void LED_Init(void)
+   24          *  功能说明：GPIO初始化函数 LED灯所用P42 P62初始化
+   25          *  参数说明：无
+   26          *  函数返回：无
+   27          *  修改时间：2022年3月8日
+   28          *  备    注：P62引脚作为OLED灯的引脚，不适合在使用OLED屏幕的情况下使用led灯，此处未初始化
+   29          *************************************************************************/
+   30          void GPIO_LED_Init(void)
+   31          {
+   32   1              P4M1 = 0x0;
+   33   1              P4M0 = 0x0;             //P4口设置为准双向口
+   34   1              P6M1 = 0x0;
+   35   1              P6M0 = 0x0;             //P6口设置为准双向口
+   36   1      }
+   37          
+   38          /*************************************************************************
+   39          *  函数名称：void LED_Ctrl(LEDn_e LEDno, LEDs_e sta)
+   40          *  功能说明：LED控制
+   41          *  参数说明：LEDn_e LEDno编号,LEDs_e sta状态亮/灭/翻转
+   42          *  函数返回：无
+   43          *  修改时间：2022年3月8日
+   44          *  备    注：
+   45          *************************************************************************/
+   46          void LED_Ctrl(LEDn_e LEDno, LEDs_e sta)
+   47          {
+   48   1          switch(LEDno)
+   49   1          {
+   50   2          case LED0:
+   51   2            if(sta==ON)        LED0p=0;
+   52   2            else if(sta==OFF)  LED0p=1;
+   53   2            else if(sta==RVS) (LED0p)?(LED0p=0):(LED0p=1);
+   54   2          break;
+   55   2      
+   56   2          case LED1:
+   57   2            if(sta==ON)        LED1p=0;
+   58   2            else if(sta==OFF)  LED1p=1;
+C251 COMPILER V5.60.0,  LQ_GPIO_LED                                                        27/05/24  09:23:04  PAGE 2   
+
+   59   2            else if(sta==RVS) (LED1p)?(LED1p=0):(LED1p=1);
+   60   2          break;
+   61   2      
+   62   2          case LED2:
+   63   2            if(sta==ON)        LED2p=0;
+   64   2            else if(sta==OFF)  LED2p=1;
+   65   2            else if(sta==RVS) (LED2p)?(LED2p=0):(LED2p=1);
+   66   2          break;
+   67   2      
+   68   2          case LED3:
+   69   2            if(sta==ON)        LED3p=0;
+   70   2            else if(sta==OFF)  LED3p=1;
+   71   2            else if(sta==RVS) (LED3p)?(LED3p=0):(LED3p=1);
+   72   2          break;
+   73   2          case LEDALL:
+   74   2            if(sta==ON)
+   75   2            {
+   76   3                LED0p=0;
+   77   3                LED1p=0;
+   78   3                LED2p=0;
+   79   3                                      LED3p=0;
+   80   3            }
+   81   2            else if(sta==OFF)
+   82   2            {
+   83   3                LED0p=1;
+   84   3                LED1p=1;
+   85   3                LED2p=1;
+   86   3                                      LED3p=1;
+   87   3            }
+   88   2            else if(sta==RVS)
+   89   2            {
+   90   3                (LED0p)?(LED0p=0):(LED0p=1);
+   91   3                (LED1p)?(LED1p=0):(LED1p=1);
+   92   3                (LED2p)?(LED2p=0):(LED2p=1);
+   93   3                (LED3p)?(LED3p=0):(LED3p=1);
+   94   3            }
+   95   2          break;
+   96   2          default:
+   97   2          break;
+   98   2          }
+   99   1      }
+  100          /**************************************************************************
+  101          函数功能：LED闪烁
+  102          入口参数：闪烁频率 
+  103          返回  值：无
+  104          **************************************************************************/
+  105          void Led_Flash(u16 time)
+  106          {
+  107   1                static int temp;
+  108   1                if(0==time) LED0p=0;
+  109   1                else if(++temp>time)  LED0p=~LED0p,temp=0;
+  110   1      }
+  111          
+  112          /*************************************************************************
+  113          *  函数名称：void Test_GPIO_LED(void)
+  114          *  功能说明：测试程序
+  115          *  参数说明：无
+  116          *  函数返回：无
+  117          *  修改时间：2022年3月8日
+  118          *  备    注：核心板上的蓝色LED灯闪烁，P62引脚作为OLED灯的引脚和核心板绿灯，不适
+  119                                                           合在使用OLED屏幕的情况下使用led灯，此处未使用，如需要可自行添加
+  120          *************************************************************************/
+  121          
+  122          void Test_GPIO_LED(void)
+  123          {
+  124   1              GPIO_LED_Init();
+C251 COMPILER V5.60.0,  LQ_GPIO_LED                                                        27/05/24  09:23:04  PAGE 3   
+
+  125   1              while(1)
+  126   1              {
+  127   2                      LED_Ctrl(LED0,RVS);        //LED闪烁
+  128   2                      LED_Ctrl(LED1,RVS);        //LED闪烁
+  129   2                      delayms(200);              
+  130   2              }
+  131   1      }
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =       299     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =         2     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =    ------     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,184 @@
+C251 COMPILER V5.60.0,  LQ_Encoder                                                         27/05/24  09:23:06  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE LQ_Encoder
+OBJECT MODULE PLACED IN .\Objects\LQ_Encoder.obj
+COMPILER INVOKED BY: E:\_app\Keil5\C251\BIN\C251.EXE LQ_lib\driver\LQ_Encoder.c XSMALL INTR2 BROWSE INCDIR(.\user;.\LQ_l
+                    -ib\app;.\LQ_lib\ddc;.\LQ_lib\driver) DEBUG PRINT(.\Listings\LQ_Encoder.lst) OBJECT(.\Objects\LQ_Encoder.obj) 
+
+stmt  level    source
+
+    1          #include "include.h"
+    2          
+    3          
+    4          /**************************************************************************
+    5          函数功能：单位时间读取编码器计数
+    6          入口参数：定时器
+    7          返回  值：脉冲数，注意读取之间周期内，不要超过16位最大值
+    8          **************************************************************************/
+    9          short Read_Encoder(u8 encno)
+   10          {
+   11   1        int32 tm=0;
+   12   1        if(encno==1)
+   13   1        {
+   14   2                      T4T3M &= ~(1<<7);
+   15   2                      tm = T4H;
+   16   2                      if(P07)//编码器２计数A:P06  DIR:P07     
+   17   2                              tm=(tm<<8)|T4L; 
+   18   2                      else 
+   19   2                              tm=0-((tm<<8)|T4L);     
+   20   2                      
+   21   2                      
+   22   2                      T4H = 0;
+   23   2                      T4L = 0;
+   24   2                      T4T3M |= (1<<7);                
+   25   2        }
+   26   1        else if(encno==2)
+   27   1        {
+   28   2                      tm = T3H;
+   29   2                      if(P05)//编码器２计数A:P04  DIR:P05     
+   30   2                              tm=(tm<<8)|T3L; 
+   31   2                      else
+   32   2                              tm=0-((tm<<8)|T3L);     
+   33   2                      
+   34   2                      T4T3M &= ~(1<<3);
+   35   2                      T3H = 0;
+   36   2                      T3L = 0;
+   37   2                      T4T3M |= (1<<3);                
+   38   2        }     
+   39   1        return tm;
+   40   1      }
+   41          
+   42          /*************************************************************************
+   43          *  函数名称：void Timer4EncInit(void)
+   44          *  功能说明：编码器初始化函数
+   45          *  参数说明：无
+   46          *  函数返回：无
+   47          *  修改时间：2020年12月1日
+   48          *  备    注：驱动2个编码器
+   49          *************************************************************************/
+   50          void Timer34EncInit (void)
+   51          {   
+   52   1              T3L = 0; 
+   53   1              T3H = 0;
+   54   1              
+   55   1              T4L = 0;
+   56   1              T4H = 0;
+   57   1              T4T3M |= 0xCC; //1100 1100 定时器4开始计数  定时器4计数模式  12分频  关闭时钟输出  定时器3开始计数  定时
+             -器3计数模式 12分频 关闭时钟输出
+C251 COMPILER V5.60.0,  LQ_Encoder                                                         27/05/24  09:23:06  PAGE 2   
+
+   58   1      
+   59   1      }
+   60          
+   61          /*************************************************************************
+   62           *  函数名称：void TestEncoder(void)
+   63           *  功能说明：测试程序，OLED显示
+   64           *  参数说明：无
+   65           *  函数返回：无
+   66           *  修改时间：2022年3月10日
+   67           *  备    注：
+   68           *************************************************************************/
+   69          
+   70          void TestEncoder(void)
+   71          {
+   72   1          char txt[16];
+   73   1          short duty = 20;
+   74   1                short enc1,enc2;
+   75   1      
+   76   1                      OLED_Init();
+   77   1          OLED_CLS();                                         //清屏
+   78   1          OLED_P6x8Str(0, 0, "Test Encoder");       //字符串显示
+   79   1          Timer34EncInit();                          //编码器接口初始化
+   80   1      //    MotorInit(MOTOR_FREQUENCY);    
+   81   1          while (1)
+   82   1          {
+   83   2              if (KEY_Read(KEY0) == 0)      //按下KEY0键，占空比减小
+   84   2              {
+   85   3                  if (duty > -PWMB_CLOCK/MOTOR_FREQUENCY)//满占空比为10M/12.5k=800
+   86   3                      duty -= 50;
+   87   3              }
+   88   2              if (KEY_Read(KEY2) == 0)      //按下KEY2键，占空比加大
+   89   2              {
+   90   3                  if (duty < PWMB_CLOCK/MOTOR_FREQUENCY)  //满占空比为10M/12.5k=800
+   91   3                      duty += 50;
+   92   3              }
+   93   2              if (KEY_Read(KEY1) == 0)      //按下KEY1键，占空比中值
+   94   2              {
+   95   3                  duty = 20;
+   96   3              }
+   97   2      
+   98   2      //        MotorCtrl(duty,duty);
+   99   2      
+  100   2              /* 获取编码器值 */
+  101   2              enc1 = Read_Encoder(1);                                 //左电机 母板上编码器1，小车前进为负值
+  102   2              enc2 = Read_Encoder(2);                                 //右电机 母板上编码器2，小车前进为正值
+  103   2      
+  104   2              sprintf(txt, "Enc1: %04d  ", enc1);
+  105   2              OLED_P6x8Str(0, 3, txt);                                //字符串显示
+  106   2                                      UART4_PutStr(txt);
+  107   2              sprintf(txt, "PWM: %05d;", duty);
+  108   2              OLED_P6x8Str(0, 4, txt);   //字符串显示
+  109   2              sprintf(txt, "Enc2: %04d \n", enc2);
+  110   2              OLED_P6x8Str(0, 5, txt);                                //字符串显示
+  111   2                                      UART4_PutStr(txt);
+  112   2      
+  113   2              LED_Ctrl(LED0, RVS);                            //电平翻转,LED闪烁
+  114   2              delayms(50);                                                                //延时等待
+  115   2          }
+  116   1      }
+  117          
+  118          
+  119          
+  120          /*************************************************************************
+  121           *  函数名称：void Encoder(void)
+  122           *  功能说明：读取编码器，OLED显示
+  123           *  参数说明：无
+C251 COMPILER V5.60.0,  LQ_Encoder                                                         27/05/24  09:23:06  PAGE 3   
+
+  124           *  函数返回：无
+  125           *  修改时间：2024年5月16日
+  126           *  备    注：
+  127           *************************************************************************/
+  128          void Encoder(void)
+  129          {
+  130   1          char txt[16];
+  131   1              short enc1,enc2;
+  132   1      
+  133   1              /* 获取编码器值 */
+  134   1              enc1 = Read_Encoder(1);                                 //左电机 母板上编码器1，小车前进为负值
+  135   1              enc2 = Read_Encoder(2);                                 //右电机 母板上编码器2，小车前进为正值
+  136   1              
+  137   1              sprintf(txt, "Enc1: %04d", enc1);
+  138   1              OLED_P6x8Str(0, 1, txt);                                //字符串显示
+  139   1      
+  140   1              sprintf(txt, "Enc2: %04d", enc2);
+  141   1              OLED_P6x8Str(0, 3, txt);                                //字符串显示
+  142   1      
+  143   1      }
+  144          
+  145          
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =       454     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =    ------         34
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =        72     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

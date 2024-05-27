@@ -1,0 +1,22 @@
+".\Objects\LQ_GPIO_LED.obj",
+".\Objects\LQ_GPIO_KEY.obj",
+".\Objects\LQ_OLED096.obj",
+".\Objects\LQ_IIC_Gyro.obj",
+".\Objects\ANO_DT.obj",
+".\Objects\LQ_SPI_Gyro.obj",
+".\Objects\LQ_IIC_VL53.obj",
+".\Objects\LQ_CCD.obj",
+".\Objects\LQ_UART.obj",
+".\Objects\LQ_Encoder.obj",
+".\Objects\LQ_TIMER.obj",
+".\Objects\LQ_MotorServo.obj",
+".\Objects\LQ_ADC.obj",
+".\Objects\LQ_GPIO_EXIT.obj",
+".\Objects\LQ_SPI_soft.obj",
+".\Objects\LQ_SOFTI2C.obj",
+".\Objects\main.obj" 
+TO ".\Objects\LQ_STC32lib" 
+PRINT(".\Listings\LQ_STC32lib.map") CASE DISABLEWARNING (16,57) 
+REMOVEUNUSED 
+CLASSES (EDATA (0x0-0xFFF), 
+HDATA (0x0-0xFFF)) 

@@ -1,0 +1,151 @@
+C251 COMPILER V5.60.0,  main                                                               27/05/24  09:23:07  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE main
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: E:\_app\Keil5\C251\BIN\C251.EXE user\main.c XSMALL INTR2 BROWSE INCDIR(.\user;.\LQ_lib\app;.\LQ_lib
+                    -\ddc;.\LQ_lib\driver) DEBUG PRINT(.\Listings\main.lst) OBJECT(.\Objects\main.obj) 
+
+stmt  level    source
+
+    1          #include "include.h"
+    2          
+    3          /********************************************************************************************************
+             -*********/
+    4          /********************************************************************************************************
+             -*********/
+    5          /********************************************************************************************************
+             -*********/
+    6          //º¯Êý£ºsysinit()                                                                                       ³
+             -õÊ¼»¯º¯Êý
+    7          //ÊäÈë£ºÎÞ
+    8          //Êä³ö£ºÎÞ
+    9          //ËµÃ÷£º¸÷Ààº¯Êý³õÊ¼»¯ÔÚÕâÌí¼Ó
+   10          /********************************************************************************************************
+             -*********/
+   11          void sysinit(void)  
+   12          {       
+   13   1              WTST = 0;                               //µ¥Æ¬»úµ½FLASHÈ¡Ö¸ÁîËùÐèÒªµÄµÈ´ýÊ±¼ä  0 Ð¡ÓÚ32MHZ  1 ¿É´ï64MHZ
+   14   1              P_SW2 |= 0x80;                  //À©Õ¹ RAM Çø ÌØÊâ¹¦ÄÜ¼Ä´æÆ÷£¨XFR£© ·ÃÎÊXFR 
+   15   1              CLKDIV = 0;                             //·ÖÆµÉèÖÃ  µ±XFRÖÃ1Ê±²ÅÄÜ·ÃÎÊ
+   16   1              P_SW2 &= 0x7F;          
+   17   1              RSTCFG|=1<<4;           //P5.4¸´Î»¹Ü½Å
+   18   1              P0M1 =0x40; P0M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú,P0.6  0.7ÎªÊäÈë¿Ú£¬±àÂëÆ÷ÓÃ
+   19   1              P0PU =0x40;             //P0.6  0.7Ê¹ÄÜÄÚ²¿4.1KÉÏÀ­µç×è
+   20   1              P1M1 = 0;   P1M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+   21   1              P3M1 = 0;   P3M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+   22   1              P4M1 = 0;   P4M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+   23   1              P5M1 = 0;   P5M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+   24   1              P6M1 = 0;   P6M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+   25   1              P7M1 = 0;   P7M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú 
+   26   1              P7PU =0xFF;                 //ÉèÖÃÎªÉÏÀ­,P7.012ÎªÊäÈë¿Ú½Ó°´¼ü,P7.4567ÎªÊä³ö¿Ú½Óµç»úÇý¶¯
+   27   1              P40 = 0;                                //´ò¿ªLEDµçÔ´ 
+   28   1              EA=1;                                   //´ò¿ª×ÜÖÐ¶Ï
+   29   1              
+   30   1              //³õÊ¼»¯º¯ÊýÌí¼Ó
+   31   1              GPIO_LED_Init();                //LED³õÊ¼»¯ ÉèÖÃIO¿ÚÄ£Ê½
+   32   1              GPIO_KEY_Init();                //°´¼ü³õÊ¼»¯ ÉèÖÃIO¿ÚÄ£Ê½
+   33   1              OLED_Init();            //OLED³õÊ¼»¯
+   34   1              ServoInit(100);                 //×ªÏòËÅ·þµç»ú³õÊ¼»¯
+   35   1              MotorInit(100);                 //ºóÂÖµç»ú³õÊ¼»¯
+   36   1              Timer34EncInit ();              //±àÂëÆ÷³õÊ¼»¯
+   37   1              MPU6050_Init();                 //ÍÓÂÝÒÇ³õÊ¼»¯
+   38   1              Timer2_init();
+   39   1              
+   40   1              //********
+   41   1      }
+   42          //
+   43          
+   44          typedef struct
+   45          {
+   46              float                kp = 6;         //P
+*** ERROR C25 IN LINE 46 OF user\main.c: syntax error near '='
+   47              float                ki = 0;         //I Î´ÓÃ
+   48              float                kd = 1.4;         //D
+   49              float                imax;       //»ý·ÖÏÞ·ù
+   50           
+   51              float                out_p;  //KPÊä³ö
+   52              float                out_i;  //KIÊä³ö
+C251 COMPILER V5.60.0,  main                                                               27/05/24  09:23:07  PAGE 2   
+
+   53              float                out_d;  //KDÊä³ö
+   54              float                out;    //pidÊä³ö
+   55                  float                            last_out;//pidÉÏÒ»´ÎÊä³ö
+   56                  float                            out_diff;//pidµ±Ç°Êä³öÓëÉÏÒ»´ÎÊä³öµÄ²îÖµ
+   57           
+   58              float                integrator; //< »ý·ÖÖµ
+   59              float                last_error; //< ÉÏ´ÎÎó²î
+   60              float                last_derivative;//< ÉÏ´ÎÎó²îÓëÉÏÉÏ´ÎÎó²îÖ®²î
+   61           
+   62              float                target;     //<  ÉèÖÃµÄÆÚÍûÖµ
+   63                  
+   64          }pid_param_t;
+   65          
+   66          //Î»ÖÃÊ½
+   67          float ServoPidLocCtrl(pid_param_t * pid,float error)
+   68          {       
+   69   1          pid->out_p = pid->kp * error;
+   70   1          pid->out_d = pid->kd * (error - pid->last_error);
+   71   1       
+   72   1          pid->last_error = error;
+   73   1       
+   74   1          pid->out = pid->out_p + pid->out_d;
+   75   1       
+   76   1          return pid->out;
+   77   1      }
+   78          
+   79          /********************************************************************************************************
+             -*********/
+   80          /********************************************************************************************************
+             -*********/
+   81          /********************************************************************************************************
+             -*********/
+   82          //º¯Êý£ºmain()                                                                                           
+             -  Ö÷º¯Êý
+   83          //ÊäÈë£ºÎÞ
+   84          //Êä³ö£ºÎÞ
+   85          //ËµÃ÷£º
+   86          /********************************************************************************************************
+             -*********/
+   87          void main()
+   88          {
+   89   1              int Servo_duty;
+   90   1              sysinit();                                      //ËùÓÐ³õÊ¼»¯
+   91   1              pid_param_t Servo;                      //ËÅ·þµç»úpid³õÊ¼»¯
+*** ERROR C25 IN LINE 91 OF user\main.c: syntax error near 'pid_param_t'
+   92   1              Servo. target = 1650;           //¶æ»úÄ¿±êÉèÖÃ
+*** ERROR C25 IN LINE 92 OF user\main.c: syntax error near '.'
+   93   1              MotorCtrl (1800,1800);          //µç»ú¿ØÖÆ£¨ÏÈ¿ªÄ¸°æÔÙ¿ªÇý¶¯°å ÒòÎªÎ´³õÊ¼»¯»áÃÍ¶¯£©×ó1£¬ÓÒ2  ±àÂëÆ÷Í¬Àí
+*** ERROR C25 IN LINE 93 OF user\main.c: syntax error near '1800'
+*** ERROR C53 IN LINE 93 OF user\main.c: redefinition of 'MotorCtrl': different return types
+   94   1              
+   95   1          //(1)¶¨Òå×óÓÒÁ½¸ö³µÂÖpid½á¹¹Ìå
+   96   1          pid_param_t Pid_Left_Motor;//×óµç»úPID½á¹¹Ìå
+   97   1          pid_param_t Pid_Right_Motor;//ÓÒµç»úPID½á¹¹Ìå
+   98   1          
+   99   1          //(2)³õÊ¼»¯pid½á¹¹Ìå
+  100   1          //×óµç»úpidÉèÖÃ
+  101   1              Pid_Init(&Pid_Left_Motor);//PID³õÊ¼»¯
+*** ERROR C25 IN LINE 101 OF user\main.c: syntax error near '&'
+  102   1              PidSet(&Pid_Left_Motor, Left_motor_kp, Left_motor_ki, Left_motor_kd, Pid_Motor_Left_imax);//pid²ÎÊýÉèÖÃ
+*** ERROR C25 IN LINE 102 OF user\main.c: syntax error near '&'
+  103   1              pidSetTarget(&Pid_Left_Motor,0);//pid²ÎÊýÉèÖÃ
+*** ERROR C25 IN LINE 103 OF user\main.c: syntax error near '&'
+  104   1       
+  105   1          //ÓÒµç»úpidÉèÖÃ
+  106   1              Pid_Init(&Pid_Right_Motor);//PID³õÊ¼»¯
+C251 COMPILER V5.60.0,  main                                                               27/05/24  09:23:07  PAGE 3   
+
+*** ERROR C25 IN LINE 106 OF user\main.c: syntax error near '&'
+  107   1              PidSet(&Pid_Right_Motor, Right_motor_kp, Right_motor_ki, Right_motor_kd, Pid_Motor_Right_imax);//pid²ÎÊý
+             -ÉèÖÃ
+*** ERROR C25 IN LINE 107 OF user\main.c: syntax error near '&'
+  108   1              pidSetTarget(&Pid_Right_Motor,0);//pid²ÎÊýÉèÖÃ
+*** ERROR C25 IN LINE 108 OF user\main.c: syntax error near '&'
+  109   1      
+  110   1              
+  111   1              while(1)
+*** ERROR C25 IN LINE 111 OF user\main.c: syntax error near 'while'
+*** ERROR C7 IN LINE 111 OF user\main.c: compilation aborted
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  13 ERROR(S)

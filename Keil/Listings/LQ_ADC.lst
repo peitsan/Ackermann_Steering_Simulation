@@ -1,0 +1,198 @@
+C251 COMPILER V5.60.0,  LQ_ADC                                                             27/05/24  09:23:06  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE LQ_ADC
+OBJECT MODULE PLACED IN .\Objects\LQ_ADC.obj
+COMPILER INVOKED BY: E:\_app\Keil5\C251\BIN\C251.EXE LQ_lib\driver\LQ_ADC.c XSMALL INTR2 BROWSE INCDIR(.\user;.\LQ_lib\a
+                    -pp;.\LQ_lib\ddc;.\LQ_lib\driver) DEBUG PRINT(.\Listings\LQ_ADC.lst) OBJECT(.\Objects\LQ_ADC.obj) 
+
+stmt  level    source
+
+    1          /*LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+    2          【平    台】北京龙邱智能科技自平衡摩托车
+    3          【编    写】chiusir
+    4          【E-mail  】chiusir@163.com
+    5          【软件版本】V1.1 版权所有，单位使用请先联系授权
+    6          【最后更新】2020年4月10日
+    7          【相关信息参考下列地址】
+    8          【网    站】http://www.lqist.cn
+    9          【淘宝店铺】http://longqiu.taobao.com
+   10          ------------------------------------------------
+   11          【dev.env.】Keil5.2及以上版本
+   12          【Target 】 STC16F40K
+   13          【SYS PLL】 36MHz
+   14          ------------------------------------------------
+   15          下载时, 选择时钟 30MHZ (用户可自行修改频率).
+   16          QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ*/
+   17          
+   18          
+   19          #include "include.h"
+   20          
+   21          
+   22          int16_t ad_max[4] = {500,500};  // 新板子放到赛道标定最大值,会被程序刷新
+   23          int16_t ad_min[4] = { 0,0};     // 新板子据需要标定最小值,会被程序刷新
+   24          int16_t left = 0, right = 0;
+   25          int16_t LnowADC[4];
+   26          u16 Voltage; 
+   27          /********************************************************************************************************
+   28          **函数信息 ：ADC1_SingleChannel_Get(uint8_t ADC_Channel_x)       
+   29          **功能描述 ：获取ADC1转换数据
+   30          **输入参数 ：ADC_Channel_x , x为0~11
+   31          **输出参数 ：puiADData为ADC读到的值，默认是12位
+   32          ********************************************************************************************************/
+   33          u16 ADC_Read(uint8 ADC_Channel_x)
+   34          { 
+   35   1          ADC_RES = 0;
+   36   1          ADC_RESL = 0;
+   37   1      
+   38   1          ADC_CONTR = (ADC_CONTR & 0xF0) | 0x40 | ADC_Channel_x;    //启动 AD 转换
+   39   1          _nop_();
+   40   1          _nop_();
+   41   1          _nop_();
+   42   1          _nop_();
+   43   1      
+   44   1          while((ADC_CONTR & 0x20) == 0)  ;   //wait for ADC finish
+   45   1          ADC_CONTR &= ~0x20;                                                                                                                                         //清除ADC结束标志
+   46   1          return  (((u16)ADC_RES << 8) | ADC_RESL);//默认是12位
+   47   1      }
+   48          
+   49          /********************************************************************************************************
+   50          **函数信息 ：Get_Adc_Average(uint8_t ADC_Channel_x,uint8_t times)     
+   51          **功能描述 ：获取几次ADC1采样值的平均值
+   52          **输入参数 ：ADC_Channel_x , x为0~8
+   53          **输出参数 ：puiADData为ADC读到的值
+   54          ********************************************************************************************************/
+   55          u16 ADC_Read_Average(uint8 ADC_Channel_x,uint8 times)
+   56          {
+   57   1          u32 temp_val=0;
+   58   1          u8 t;
+C251 COMPILER V5.60.0,  LQ_ADC                                                             27/05/24  09:23:06  PAGE 2   
+
+   59   1          u8 delay;
+   60   1          for(t=0;t<times;t++)
+   61   1          {
+   62   2              temp_val+=ADC_Read(ADC_Channel_x);
+   63   2              for(delay=0;delay<100;delay++);
+   64   2          }
+   65   1          return temp_val/times;
+   66   1      } 
+   67          /*************************************************************************
+   68           *  函数名称：void InductorInit (void)
+   69           *  功能说明：四个电感ADC初始化函数；
+   70           *  参数说明：无
+   71           *  函数返回：无
+   72           *  修改时间：2020年11月18日
+   73           *  备    注：
+   74           *************************************************************************/
+   75          void ADC_Init (void)
+   76          {
+   77   1                      P0M1 |= 0x0f;
+   78   1                P0M0 &= ~0x0f;
+   79   1                      P1M1 |= 0x03;
+   80   1                      P1M0 &= ~0x03;
+   81   1              
+   82   1          P_SW2 |= 0x80;
+   83   1          ADCTIM = 0x3f;                                      //设置 ADC 内部时序，ADC采样时间建议设最大值
+   84   1          P_SW2 &= 0x7f;
+   85   1          ADCCFG = 0x2f;                                      //设置 ADC 时钟为系统时钟/2/16/16
+   86   1          ADC_CONTR = 0x80;                   //使能 ADC 模块
+   87   1      }
+   88          
+   89          /**************************************************************************
+   90          函数功能：读取电感值 
+   91          入口参数：无
+   92          返回  值：无
+   93          **************************************************************************/
+   94          void Get_Adc(void)
+   95          {       
+   96   1              LnowADC[0]=ADC_Read(8);      //读取ADC11通道值
+   97   1              LnowADC[1]=ADC_Read(9);                 //读取ADC10通道值
+   98   1              LnowADC[2]=ADC_Read(10);                        //读取ADC9通道值
+   99   1              LnowADC[3]=ADC_Read(11);                                //读取ADC8通道值        
+  100   1      }
+  101          /*************************************************************************
+  102           *  函数名称：void InductorNormal(void)
+  103           *  功能说明：采集电感电压并并归一化；
+  104           *  函数返回：无
+  105           *  修改时间：2020年11月26日
+  106           *  备    注： 
+  107           *************************************************************************/
+  108          void InductorNormal(void)
+  109          {
+  110   1          Get_Adc();  //读取ADC
+  111   1                if (LnowADC[0] < ad_min[0])            ad_min[0] = LnowADC[0];     // 刷新最小值
+  112   1          else if (LnowADC[0] > ad_max[0])       ad_max[0] = LnowADC[0];     // 刷新最大值
+  113   1          if (LnowADC[1] < ad_min[1])            ad_min[1] = LnowADC[1];
+  114   1          else if (LnowADC[1] > ad_max[1])       ad_max[1] = LnowADC[1]; 
+  115   1          if (LnowADC[2] < ad_min[2])            ad_min[2] = LnowADC[2];
+  116   1          else if (LnowADC[2] > ad_max[2])       ad_max[2] = LnowADC[2];
+  117   1          if (LnowADC[3] < ad_min[3])            ad_min[3] = LnowADC[3];
+  118   1          else if (LnowADC[3] > ad_max[3])       ad_max[3] = LnowADC[3];      
+  119   1              
+  120   1                left = (LnowADC[0] - ad_min[0]) * 100 / (ad_max[0] - ad_min[0]);     // 各偏移量归一化到0--1000以内
+  121   1          right = (LnowADC[1] - ad_min[1]) * 100 / (ad_max[1] - ad_min[1]);
+  122   1      }
+  123          /*************************************************************************
+  124          *  函数名称：void Test_ADC(void)
+C251 COMPILER V5.60.0,  LQ_ADC                                                             27/05/24  09:23:06  PAGE 3   
+
+  125          *  功能说明：测试程序
+  126          *  参数说明：无
+  127          *  函数返回：无
+  128          *  修改时间：2020年3月10日
+  129          *  备    注：屏幕显示ADC采集的电感值
+  130          *************************************************************************/
+  131          void Test_ADC(void)
+  132           {
+  133   1              char txt[30]; 
+  134   1              OLED_Init();    //OLED初始化
+  135   1              OLED_CLS();             //清屏          
+  136   1              OLED_P14x16Str(0,2,(unsigned char*)"北京龙邱智能科技");         //字符串显示
+  137   1              OLED_P6x8Str(0,4,"Long Qiu i.s.t.");            //字符串显示
+  138   1              delayms(1000);  //延时等待
+  139   1              OLED_CLS();     //清屏          
+  140   1              ADC_Init();                     //ADC初始化
+  141   1              while(1)
+  142   1              {
+  143   2                      Get_Adc();      
+  144   2                      sprintf(txt,"AD0:%04d ",LnowADC[0]);  //显示ADC11的值
+  145   2                      OLED_P8x16Str(0,0,(u8*)txt);
+  146   2                      UART4_PutStr(txt);
+  147   2                      
+  148   2                      sprintf(txt,"AD1:%04d ",LnowADC[1]);    //显示ADC10的值
+  149   2                      OLED_P8x16Str(0,2,(u8*)txt);
+  150   2                      UART4_PutStr(txt);
+  151   2                      
+  152   2                      sprintf(txt,"AD2:%04d ",LnowADC[2]);    //显示ADC9的值
+  153   2                      OLED_P8x16Str(0,4,(u8*)txt);
+  154   2                      UART4_PutStr(txt);
+  155   2                      
+  156   2                      sprintf(txt,"AD3:%04d ",LnowADC[3]);    //显示ADC8的值
+  157   2                      OLED_P8x16Str(0,6,(u8*)txt);
+  158   2                      UART4_PutStr(txt);UART4_PutStr("\n ");
+  159   2                      }
+  160   1      }
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =       620     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =        30         34
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =       112     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

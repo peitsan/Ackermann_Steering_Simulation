@@ -1,0 +1,310 @@
+C251 COMPILER V5.60.0,  LQ_UART                                                            27/05/24  09:23:05  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE LQ_UART
+OBJECT MODULE PLACED IN .\Objects\LQ_UART.obj
+COMPILER INVOKED BY: E:\_app\Keil5\C251\BIN\C251.EXE LQ_lib\driver\LQ_UART.c XSMALL INTR2 BROWSE INCDIR(.\user;.\LQ_lib\
+                    -app;.\LQ_lib\ddc;.\LQ_lib\driver) DEBUG PRINT(.\Listings\LQ_UART.lst) OBJECT(.\Objects\LQ_UART.obj) 
+
+stmt  level    source
+
+    1          /*LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+    2           【平    台】北京龙邱智能科技STC32G12K128 LQFP64核心板
+    3           【编    写】chiusir
+    4           【E-mail  】chiusir@163.com
+    5           【软件版本】V1.1 版权所有，单位使用请先联系授权
+    6           【最后更新】2022年3月8日
+    7           【相关信息参考下列地址】
+    8           【网    站】http://www.lqist.cn
+    9           【淘宝店铺】http://longqiu.taobao.com
+   10           ------------------------------------------------
+   11           【IDE】STC32
+   12           【Target 】 keil5.2及以上
+   13           【SYS PLL】 35MHz使用内部晶振，通过
+   14          =================================================================
+   15          stc-isp下载时, 选择时钟 35MHZ
+   16          QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ*/
+   17          
+   18          #include "include.h"
+   19          
+   20          u8 Uart4_Receive;
+   21          
+   22          #define Baudrate1   (65536 - MAIN_Fosc / 115200 / 4)
+   23          #define Baudrate4   (65536 - MAIN_Fosc / 115200 / 4)
+   24          
+   25          bit busy;
+   26          int wptr;
+   27          char rptr;
+   28          char buffer[64];
+   29          
+   30          //========================================================================
+   31          // 函数: void UART1_int (void) interrupt UART1_VECTOR
+   32          // 描述: UART1中断函数。
+   33          // 参数: nine.
+   34          // 返回: none.
+   35          // 版本: VER1.0
+   36          // 日期: 2014-11-28
+   37          // 备注: 
+   38          //========================================================================
+   39          void UART1_int (void) interrupt 4
+   40          {
+   41   1              if(TI)
+   42   1              {
+   43   2                      TI= 0;
+   44   2                      busy= 0;
+   45   2              }
+   46   1              if(RI)
+   47   1              {
+   48   2                      RI= 0;
+   49   2                      buffer[wptr++]= SBUF;
+   50   2                      wptr &= 0xff;
+   51   2              }
+   52   1      }
+   53          
+   54          //========================================================================
+   55          // 函数: void UART4_int (void) interrupt UART4_VECTOR
+   56          // 描述: UART4中断函数。
+   57          // 参数: nine.
+   58          // 返回: none.
+C251 COMPILER V5.60.0,  LQ_UART                                                            27/05/24  09:23:05  PAGE 2   
+
+   59          // 版本: VER1.0
+   60          // 日期: 2022-03-04
+   61          // 备注: 
+   62          //========================================================================
+   63          void UART4_int (void) interrupt 18
+   64          {
+   65   1              if(S4CON & 0x02)
+   66   1              {
+   67   2                      S4CON &= ~0x02;  //Clear Tx flag  清楚发送标志位
+   68   2                      busy=0;
+   69   2              }
+   70   1              if(S4CON & 0x01)                                  
+   71   1              {
+   72   2                      S4CON &= ~0x01;  //Clear Rx flag        清楚接收标志位
+   73   2                      buffer[wptr++]= S4BUF;
+   74   2                      wptr &= 0xff;
+   75   2              }
+   76   1      }
+   77          //========================================================================
+   78          // 函数: SetTimer2Baudraye(u32 dat)
+   79          // 描述: 设置Timer2做波特率发生器。
+   80          // 参数: dat: Timer2的重装值.
+   81          // 返回: none.
+   82          // 版本: VER1.0
+   83          // 日期: 2014-11-28
+   84          // 备注: 
+   85          //========================================================================
+   86          void SetTimer2Baudraye(u32 dat)
+   87          {
+   88   1              S4CON = 0x10;                       //8位数据, 使用Timer2做波特率发生器, 允许接收
+   89   1              T2H = dat>>8;
+   90   1              T2L = dat;
+   91   1              AUXR = 0x14;
+   92   1      }
+   93          //========================================================================
+   94          // 函数: void   UART1_config(u16 tmr)
+   95          // 描述: UART1初始化函数。
+   96          // 参数: tmr: 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+   97          // 返回: none.
+   98          // 版本: VER1.0
+   99          // 日期: 2014-11-28
+  100          // 备注: 
+  101          //========================================================================
+  102          void UART1_config()
+  103          {
+  104   1      //      SCON= 0x50;             //可变波特率 8位数据方式 允许串口接收数据
+  105   1      //      T2L = Baudrate1;                //定时器2
+  106   1      //      T2H = Baudrate1>>8;
+  107   1      //      AUXR= 0x15;             //选择定时器2作为波特率发射器
+  108   1      //      wptr = 0x00;
+  109   1      //      rptr = 0x00;
+  110   1      //      busy= 0;
+  111   1      
+  112   1                      TR1 = 0;
+  113   1                      AUXR &= ~0x01;                                        //S1 tmr Use Timer1;
+  114   1                      AUXR |=  (1<<6);                                      //Timer1 set as 1T mode
+  115   1                      TMOD &= ~(1<<6);                                      //Timer1 set As Timer
+  116   1                      TMOD &= ~0x30;                                        //Timer1_16bitAutoReload;
+  117   1                      TH1 = (u8)(Baudrate1 / 256);
+  118   1                      TL1 = (u8)(Baudrate1 % 256);
+  119   1                      ET1 = 0;                                                                //禁止中断
+  120   1                      INTCLKO &= ~0x02;                                               //不输出时钟
+  121   1                      TR1  = 1;
+  122   1      
+  123   1      
+  124   1          SCON = (SCON & 0x3f) | 0x40;                                //UART1模式, 0x00: 同步移位输出, 0x40: 8位
+C251 COMPILER V5.60.0,  LQ_UART                                                            27/05/24  09:23:05  PAGE 3   
+
+             -数据,可变波特率, 0x80: 9位数据,固定波特率, 0xc0: 9位数据,可变波特率
+  125   1      //  PS  = 1;                                                    //高优先级中断
+  126   1          ES  = 1;                                                    //允许中断
+  127   1          REN = 1;                                                     //允许接收
+  128   1          P_SW1 &= 0x3f;
+  129   1      //  P_SW1 |= 0x00;                                              //UART1 switch to, 0x00: P3.0 P3.1, 0x40: 
+             -P3.6 P3.7, 0x80: P1.6 P1.7, 0xC0: P4.3 P4.4
+  130   1      
+  131   1      }
+  132          
+  133          void UART4_config(u16 tmr)              // 选择时钟源, 2: 使用Timer2做波特率, 其它值: 使用Timer4做波特率.
+  134          {
+  135   1              if(tmr == 2)                                                                                                    //使用TIM2作为波特率时钟源
+  136   1              {
+  137   2                      SetTimer2Baudraye(Baudrate4);
+  138   2              }
+  139   1              else
+  140   1              {
+  141   2                      S4CON = 0x50;                       //8位数据, 使用Timer4做波特率发生器, 允许接收
+  142   2                      T4H = Baudrate4>>8;
+  143   2                      T4L = Baudrate4;
+  144   2                      T4T3M = 0xA0;                                                                                           //定时器4开始工作，不分频
+  145   2              }
+  146   1      //              P_SW2 &= ~0x04;                   //UART4 switch bit2 to: 0: P0.2 P0.3选择引脚
+  147   1              P_SW2 |= 0x04;                      //UART4 switch bit2 to: 1: P5.2 P5.3选择引脚
+  148   1              wptr = 0x00;                                                                                            //三个标志位清零
+  149   1              rptr = 0x00;
+  150   1              busy= 0;
+  151   1      
+  152   1              IE2 |= 0x10;                        //允许UART4中断
+  153   1              
+  154   1      }
+  155          
+  156          
+  157          /*************************************************************************
+  158          *  函数名称：void UART_PutChar(UART_t  uratn, char ch)
+  159          *  功能说明：UART发送字节函数,使用前请先初始化对应串口
+  160          *  参数说明：uratn ： UART0 - UART3/ ch    ： 要打印的字符
+  161          *  函数返回：无
+  162          *  修改时间：2020年3月10日
+  163          *  备    注：UART_PutChar(UART0, 'a');  //打印字符a
+  164          *************************************************************************/
+  165          void UART1_PutChar(char dat)
+  166          {
+  167   1              while(busy);
+  168   1              busy= 1;
+  169   1              SBUF= dat;
+  170   1      }
+  171          
+  172          /*************************************************************************
+  173          *  函数名称：void UART_PutStr(UART_t  uratn, char *st)
+  174          *  功能说明：UART发送字符串函数(遇 NULL 停止发送),使用前请先初始化对应串口
+  175          *  参数说明：uratn ： UART0 - UART3/ str   ： 要打印的字符串地址
+  176          *  函数返回：无
+  177          *  修改时间：2020年3月10日
+  178          *  备    注：UART_PutStr(UART3, "123456789"); //发送9个字节
+  179          *************************************************************************/
+  180          void UART1_PutStr(char *p)
+  181          {
+  182   1              char *p1;
+  183   1              p1=p;
+  184   1              while(*p1)
+  185   1              {
+  186   2                      UART1_PutChar(*p1++);
+  187   2              }
+  188   1      }
+C251 COMPILER V5.60.0,  LQ_UART                                                            27/05/24  09:23:05  PAGE 4   
+
+  189          
+  190          void UART4_PutChar(char ch)
+  191          {
+  192   1              while(busy);
+  193   1              busy=1;
+  194   1              S4BUF = ch;
+  195   1      }
+  196          /*************************************************************************
+  197          *  函数名称：void UART_PutStr(UART_t  uratn, char *st)
+  198          *  功能说明：UART发送字符串函数(遇 NULL 停止发送),使用前请先初始化对应串口
+  199          *  参数说明：uratn ： UART0 - UART3/ str   ： 要打印的字符串地址
+  200          *  函数返回：无
+  201          *  修改时间：2020年3月10日
+  202          *  备    注：UART_PutStr(UART3, "123456789"); //发送9个字节
+  203          *************************************************************************/
+  204          
+  205          void UART4_PutStr(char *st)
+  206          {
+  207   1        while(*st)
+  208   1        {
+  209   2          UART4_PutChar(*st++);
+  210   2        }
+  211   1      }
+  212          /*************************************************************************
+  213          *  函数名称：char UART_GetChar(UART_t  uratn)
+  214          *  功能说明：UART读取字节 使用前请先初始化对应串口 调用前请确认有接收到数据 否则会等待数据到来
+  215          *  参数说明：uratn ： UART0 - UART3
+  216          *  函数返回：读取字节
+  217          *  修改时间：2020年3月10日
+  218          *  备    注：UART_GetChar(UART3); //接收一个字符
+  219          *************************************************************************/
+  220          char UART1_GetChar(void)
+  221          {  
+  222   1        return (SBUF);
+  223   1      }
+  224          char UART4_GetChar(void)
+  225          {  
+  226   1        return (S4BUF);
+  227   1      }
+  228          
+  229          /*************************************************************************
+  230          *  函数名称：void UART4_PutBuff(char *st, u16 len)
+  231          *  功能说明：UART发送字符串使用前请先初始化对应串口 调用前请确认有接收到数据 否则会等待数据到来
+  232          *  修改时间：2023年2月7日
+  233          //匿名地面站上位机接口函数
+  234          *************************************************************************/
+  235          void UART4_PutBuff(char *st, u16 len)
+  236          {
+  237   1        while(len--)
+  238   1        {
+  239   2          UART4_PutChar(*st++);
+  240   2        }
+  241   1      }
+  242          void UART1_PutBuff(char *st, u16 len)
+  243          {
+  244   1        while(len--)
+  245   1        {
+  246   2          UART1_PutChar(*st++);
+  247   2        }
+  248   1      }
+  249          /*LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+  250          【函数名】void delayus(unsigned int us)
+  251          【功  能】延时函数
+  252          【参数值】us /30M
+  253          【返回值】无 
+  254          【作  者】chiusir
+C251 COMPILER V5.60.0,  LQ_UART                                                            27/05/24  09:23:05  PAGE 5   
+
+  255          【最后更新】2021年1月22日 
+  256          【软件版本】V1.0
+  257          QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ*/
+  258          void  delayus(unsigned int us)
+  259          {
+  260   1        unsigned int i;
+  261   1        do{    
+  262   2          i=MAIN_Fosc/6000001;//大约1us
+  263   2          while(--i);
+  264   2        }while(--us);
+  265   1      }
+  266          //
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =       392     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =        68          4
+  bit size             =         1     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =    ------     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

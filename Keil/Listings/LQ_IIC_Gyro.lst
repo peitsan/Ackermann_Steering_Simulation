@@ -1,0 +1,876 @@
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE LQ_IIC_Gyro
+OBJECT MODULE PLACED IN .\Objects\LQ_IIC_Gyro.obj
+COMPILER INVOKED BY: E:\_app\Keil5\C251\BIN\C251.EXE LQ_lib\app\LQ_IIC_Gyro.c XSMALL INTR2 BROWSE INCDIR(.\user;.\LQ_lib
+                    -\app;.\LQ_lib\ddc;.\LQ_lib\driver) DEBUG PRINT(.\Listings\LQ_IIC_Gyro.lst) OBJECT(.\Objects\LQ_IIC_Gyro.obj) 
+
+stmt  level    source
+
+    1          #include "include.h"
+    2          
+    3          #define MPU_ADDR  0x68  //IICÐ´ÈëÊ±µÄµØÖ·×Ö½ÚÊý¾Ý£¬+1Îª¶ÁÈ¡
+    4          
+    5          unsigned char IIC_ICM20602 = 0;
+    6          unsigned char IIC_ICM20689 = 0;
+    7          unsigned char IIC_MPU9250 = 0;
+    8          unsigned char IIC_ICM42605 = 0;
+    9          unsigned char IIC_MPU6050 = 0;
+   10          unsigned char IIC_errorid = 0;
+   11          
+   12          unsigned char Gyro_ID = 0;
+   13          
+   14          /**
+   15            * @brief   ¶ÁÈ¡ÍÓÂÝÒÇµÄÉè±¸ID
+   16            *
+   17            * @param   void
+   18            *
+   19            * @retur   void
+   20            *
+   21            * @note
+   22            *
+   23            * @see      Gyro_Chose();
+   24            *
+   25            * @date     2021/7/12 ÐÇÆÚÒ»
+   26            */
+   27          unsigned char Gyro_Chose(void)
+   28          {
+   29   1          Gyro_ID = MPU_Read_Byte(MPU_ADDR,WHO_AM_I);   //Gyro_ID = 0x68
+   30   1          switch(Gyro_ID)
+   31   1          {
+   32   2              case 0x12:IIC_ICM20602 = 1;break;
+   33   2              case 0x71:IIC_MPU9250 = 1;break;
+   34   2              case 0x98:IIC_ICM20689 = 1;break;
+   35   2              case 0x42:IIC_ICM42605 = 1;break;
+   36   2              case 0x68:IIC_MPU6050 = 1;break;
+   37   2              default :IIC_errorid = 1;return Gyro_ID;
+   38   2          }
+   39   1          return Gyro_ID;
+   40   1      }
+   41          
+   42          
+   43          signed short  aacx,aacy,aacz;            //¼ÓËÙ¶È´«¸ÐÆ÷Ô­Ê¼Êý¾Ý
+   44          signed short  gyrox,gyroy,gyroz;         //ÍÓÂÝÒÇÔ­Ê¼Êý¾Ý
+   45          short magx, magy, magz;
+   46          /**
+   47            * @brief    ¶ÁÈ¡MPU6050»òÕßICM20602Ô­Ê¼Êý¾Ý ²âÊÔ
+   48            *
+   49            * @param
+   50            *
+   51            * @return
+   52            *
+   53            * @note
+   54            *
+   55            * @see      Test_MPU6050();
+   56            *
+   57            * @date     2019/6/12 ÐÇÆÚÈý
+   58            */
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 2   
+
+   59          void Test_IIC_Gyro(void)
+   60          {
+   61   1        unsigned char res;
+   62   1              char  txt[64];
+   63   1              unsigned char DATH[6], DATL[6];
+   64   1      
+   65   1              IIC_Init();                  //IIC³õÊ¼»¯//IIC³õÊ¼»¯
+   66   1              delayms(100);
+   67   1              res = Gyro_Chose();                //ÅÐ¶ÏÍÓÂÝÒÇÐÍºÅ
+   68   1              sprintf(txt,"ID:0X%2x",res);
+   69   1              UART4_PutStr(txt);
+   70   1      
+   71   1              OLED_Init();                //LCD³õÊ¼»¯
+   72   1              delayms(100);
+   73   1              OLED_CLS();                 //LCDÇåÆÁ
+   74   1              OLED_P6x8Str(70,2,txt);     // ×Ö·û´®ÏÔÊ¾
+   75   1              if(IIC_ICM20602)
+   76   1                              OLED_P8x16Str(0,0,"LQ 20602 Test");// ×Ö·û´®ÏÔÊ¾
+   77   1              if(IIC_MPU6050)
+   78   1                              OLED_P8x16Str(0,0,"LQ 6050 Test");// ×Ö·û´®ÏÔÊ¾
+   79   1              if(IIC_ICM42605)
+   80   1                              OLED_P8x16Str(0,0,"LQ 42605 Test");// ×Ö·û´®ÏÔÊ¾
+   81   1              if(IIC_MPU9250)
+   82   1                              OLED_P8x16Str(0,0,"LQ 9250 Test");// ×Ö·û´®ÏÔÊ¾
+   83   1              if(IIC_ICM20689)
+   84   1                              OLED_P8x16Str(0,0,"LQ 20689 Test");// ×Ö·û´®ÏÔÊ¾
+   85   1              if(IIC_errorid)
+   86   1              {
+   87   2                              OLED_P8x16Str(0,0,"Gyro Test fail");// ×Ö·û´®ÏÔÊ¾
+   88   2                              while(1);
+   89   2              }
+   90   1                      
+   91   1              MPU6050_Init();
+   92   1              while(1)
+   93   1          {
+   94   2                              //µÃµ½¼ÓËÙ¶È´«¸ÐÆ÷Êý¾Ý
+   95   2                              DATH[0] = MPU_Read_Byte(MPU_ADDR,0x3B);DATL[0] = MPU_Read_Byte(MPU_ADDR,0x3C);
+   96   2                              DATH[1] = MPU_Read_Byte(MPU_ADDR,0x3D);DATL[1] = MPU_Read_Byte(MPU_ADDR,0x3E);
+   97   2                              DATH[2] = MPU_Read_Byte(MPU_ADDR,0x3F);DATL[2] = MPU_Read_Byte(MPU_ADDR,0x40);
+   98   2                              DATH[3] = MPU_Read_Byte(MPU_ADDR,0x43);DATL[3] = MPU_Read_Byte(MPU_ADDR,0x44);
+   99   2                              DATH[4] = MPU_Read_Byte(MPU_ADDR,0x45);DATL[4] = MPU_Read_Byte(MPU_ADDR,0x46);
+  100   2                              DATH[5] = MPU_Read_Byte(MPU_ADDR,0x47);DATL[5] = MPU_Read_Byte(MPU_ADDR,0x48);
+  101   2                              //Êý¾Ý×ª»»
+  102   2                              aacx = DATH[0]; aacx = (aacx<<8)|DATL[0];
+  103   2                              aacy = DATH[1]; aacy = (aacy<<8)|DATL[1];
+  104   2                              aacz = DATH[2]; aacz = (aacz<<8)|DATL[2];
+  105   2                              gyrox = DATH[3]; gyrox = (gyrox<<8)|DATL[3];
+  106   2                              gyroy = DATH[4]; gyroy = (gyroy<<8)|DATL[4];
+  107   2                              gyroz = DATH[5]; gyroz = (gyroz<<8)|DATL[5];
+  108   2                              
+  109   2                  if (IIC_MPU9250)
+  110   2                              {
+  111   3                                      DATH[0] = MPU_Read_Byte(MPU_ADDR,0X03);DATL[0] = MPU_Read_Byte(MPU_ADDR,0X04);
+  112   3                                      DATH[1] = MPU_Read_Byte(MPU_ADDR,0X05);DATL[1] = MPU_Read_Byte(MPU_ADDR,0X06);
+  113   3                                      DATH[2] = MPU_Read_Byte(MPU_ADDR,0X07);DATL[2] = MPU_Read_Byte(MPU_ADDR,0X08);
+  114   3                                      magx = DATH[0]; magx = (magx<<8)|DATL[0];
+  115   3                                      magy = DATH[1]; magy = (magy<<8)|DATL[1];
+  116   3                                      magz = DATH[2]; magz = (magz<<8)|DATL[2];
+  117   3                                      sprintf((char*)txt,"gx:%06d",gyrox);
+  118   3                                      OLED_P6x8Str(70,5,txt);
+  119   3                                      sprintf((char*)txt,"gy:%06d",gyroy);
+  120   3                                      OLED_P6x8Str(70,6,txt);
+  121   3                                      sprintf((char*)txt,"gz:%06d",gyroz);
+  122   3                                      OLED_P6x8Str(70,7,txt);
+  123   3                              }
+  124   2                     
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 3   
+
+  125   2                  sprintf((char*)txt,"ax:%06d",aacx);
+  126   2                              OLED_P6x8Str(0,2,txt);
+  127   2                              sprintf((char*)txt,"ay:%06d",aacy);
+  128   2                              OLED_P6x8Str(0,3,txt);
+  129   2                              sprintf((char*)txt,"az:%06d",aacz);
+  130   2                              OLED_P6x8Str(0,4,txt);
+  131   2                              sprintf((char*)txt,"gx:%06d",gyrox);
+  132   2                              OLED_P6x8Str(0,5,txt);
+  133   2                              sprintf((char*)txt,"gy:%06d",gyroy);
+  134   2                              OLED_P6x8Str(0,6,txt);
+  135   2                              sprintf((char*)txt,"gz:%06d",gyroz);
+  136   2                              OLED_P6x8Str(0,7,txt);
+  137   2      //                      ANO_DT_send_int16byte16(aacx,aacy,aacz,gyrox,gyroy,gyroz,gyroz,gyroz);
+  138   2                  delayms(100);
+  139   2          }
+  140   1      
+  141   1      }
+  142          
+  143          
+  144          
+  145          
+  146          //****************************************************************************************
+  147          //
+  148          //
+  149          //
+  150          //
+  151          /**
+  152            * @brief    ¶ÁÈ¡MPU6050»òÕßÊý¾Ý ²âÊÔ
+  153            *
+  154            * @param
+  155            *
+  156            * @return
+  157            *
+  158            * @note
+  159            *
+  160            * @see      Test_MPU6050();
+  161            *
+  162            * @date     2019/6/12 ÐÇÆÚÈý
+  163            */
+  164          void IIC_Gyro(void)
+  165          {
+  166   1              unsigned char res;
+  167   1              char  txt[64];
+  168   1              unsigned char DATH[6], DATL[6];
+  169   1      
+  170   1              IIC_Init();                  //IIC³õÊ¼»¯//IIC³õÊ¼»¯
+  171   1              delayms(100);
+  172   1              res = Gyro_Chose();                //ÅÐ¶ÏÍÓÂÝÒÇÐÍºÅ
+  173   1              sprintf(txt,"ID:0X%2x",res);
+  174   1      
+  175   1              OLED_Init();                //LCD³õÊ¼»¯
+  176   1              delayms(100);
+  177   1              OLED_CLS();                 //LCDÇåÆÁ
+  178   1              OLED_P6x8Str(70,2,txt);     // ×Ö·û´®ÏÔÊ¾
+  179   1              if(IIC_MPU6050)
+  180   1                              OLED_P8x16Str(0,0,"LQ 6050");// ×Ö·û´®ÏÔÊ¾
+  181   1              if(IIC_errorid)
+  182   1              {
+  183   2                              OLED_P8x16Str(0,0,"Gyro Test fail");// ×Ö·û´®ÏÔÊ¾
+  184   2                              while(1);
+  185   2              }
+  186   1                      
+  187   1              MPU6050_Init();
+  188   1              while(1)
+  189   1          {
+  190   2                      //µÃµ½¼ÓËÙ¶È´«¸ÐÆ÷Êý¾Ý
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 4   
+
+  191   2                      DATH[0] = MPU_Read_Byte(MPU_ADDR,0x3B);DATL[0] = MPU_Read_Byte(MPU_ADDR,0x3C);
+  192   2                      DATH[1] = MPU_Read_Byte(MPU_ADDR,0x3D);DATL[1] = MPU_Read_Byte(MPU_ADDR,0x3E);
+  193   2                      DATH[2] = MPU_Read_Byte(MPU_ADDR,0x3F);DATL[2] = MPU_Read_Byte(MPU_ADDR,0x40);
+  194   2                      DATH[3] = MPU_Read_Byte(MPU_ADDR,0x43);DATL[3] = MPU_Read_Byte(MPU_ADDR,0x44);
+  195   2                      DATH[4] = MPU_Read_Byte(MPU_ADDR,0x45);DATL[4] = MPU_Read_Byte(MPU_ADDR,0x46);
+  196   2                      DATH[5] = MPU_Read_Byte(MPU_ADDR,0x47);DATL[5] = MPU_Read_Byte(MPU_ADDR,0x48);
+  197   2                      //Êý¾Ý×ª»»
+  198   2                      aacx = DATH[0]; aacx = (aacx<<8)|DATL[0];
+  199   2                      aacy = DATH[1]; aacy = (aacy<<8)|DATL[1];
+  200   2                      aacz = DATH[2]; aacz = (aacz<<8)|DATL[2];
+  201   2                      gyrox = DATH[3]; gyrox = (gyrox<<8)|DATL[3];
+  202   2                      gyroy = DATH[4]; gyroy = (gyroy<<8)|DATL[4];
+  203   2                      gyroz = DATH[5]; gyroz = (gyroz<<8)|DATL[5];
+  204   2                      
+  205   2                      sprintf((char*)txt,"ax:%06d",aacx);
+  206   2                      OLED_P6x8Str(0,2,txt);
+  207   2                      sprintf((char*)txt,"ay:%06d",aacy);
+  208   2                      OLED_P6x8Str(0,3,txt);
+  209   2                      sprintf((char*)txt,"az:%06d",aacz);
+  210   2                      OLED_P6x8Str(0,4,txt);
+  211   2                      sprintf((char*)txt,"gx:%06d",gyrox);
+  212   2                      OLED_P6x8Str(0,5,txt);
+  213   2                      sprintf((char*)txt,"gy:%06d",gyroy);
+  214   2                      OLED_P6x8Str(0,6,txt);
+  215   2                      sprintf((char*)txt,"gz:%06d",gyroz);
+  216   2                      OLED_P6x8Str(0,7,txt);
+  217   2      //              ANO_DT_send_int16byte16(aacx,aacy,aacz,gyrox,gyroy,gyroz,gyroz,gyroz);
+  218   2                  delayms(100);
+  219   2          }
+  220   1      
+  221   1      }
+  222          
+  223          /**
+  224            * @brief    ²»¾«È·ÑÓÊ±
+  225            *
+  226            * @param    ÎÞ
+  227            *
+  228            * @return   ÎÞ
+  229            *
+  230            * @note     ÎÞ
+  231            *
+  232            * @see      delayms_mpu(100);
+  233            *
+  234            * @date     2019/4/22 ÐÇÆÚÒ»
+  235          */
+  236          void delayms_mpu(uint16 ms)
+  237          {
+  238   1              while(ms--)
+  239   1              {
+  240   2                      uint16  i = 300*50;
+  241   2                      while(i--)
+  242   2                      {
+  243   3                              _nop_();
+  244   3                      }
+  245   2              }
+  246   1      }
+  247          
+  248          /**
+  249            * @brief    ³õÊ¼»¯MPU6050 »òÕß ICM20602
+  250            *
+  251            * @param    ÎÞ
+  252            *
+  253            * @return   0£º³õÊ¼»¯³É¹¦   1£ºÊ§°Ü
+  254            *
+  255            * @note     Ê¹ÓÃÇ°ÏÈ³õÊ¼»¯IIC½Ó¿Ú
+  256            *
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 5   
+
+  257            * @see      MPU6050_Init();
+  258            *
+  259            * @date     2019/6/12 ÐÇÆÚÈý
+  260            */
+  261          unsigned char MPU6050_Init(void)
+  262          {
+  263   1          int  res;
+  264   1          if (IIC_ICM42605)
+  265   1          {
+  266   2      //        MPU_Write_Byte(MPU_ADDR, device_config_reg,bit_soft_reset_chip_config);//chip soft reset
+  267   2      //        delayms(10);
+  268   2      //
+  269   2      //            MPU_Write_Byte(MPU_ADDR,reg_bank_sel,0x01);//Change to bank 1
+  270   2      //            MPU_Write_Byte(MPU_ADDR,intf_config4,0x03);//4 wire spi mode  ËÄÏßSPI  Ä¬ÈÏÖµ0x03
+  271   2      //            MPU_Write_Byte(MPU_ADDR,reg_bank_sel,0x00);
+  272   2      //            MPU_Write_Byte(MPU_ADDR,fifo_config_reg,0x40);//Stream-to-FIFO Mode  ÍÓÂÝÒÇYÖáÏÝ²¨ÂË²¨Æ÷µÄÆ
+             -µÂÊÑ¡Ôñ
+  273   2      //
+  274   2      //            res = MPU_Read_Byte(MPU_ADDR,int_source0_reg);
+  275   2      //            MPU_Write_Byte(MPU_ADDR,int_source0_reg,0x00);
+  276   2      //            MPU_Write_Byte(MPU_ADDR,fifo_config2_reg,0x00);// watermark
+  277   2      //            MPU_Write_Byte(MPU_ADDR,fifo_config3_reg,0x02);// watermark
+  278   2      //            MPU_Write_Byte(MPU_ADDR,int_source0_reg, (unsigned char)res);
+  279   2      //            MPU_Write_Byte(MPU_ADDR,fifo_config1_reg,0x63);// Enable the accel and gyro to the FIFO
+  280   2      //
+  281   2      //            MPU_Write_Byte(MPU_ADDR,reg_bank_sel,0x00);
+  282   2      //            MPU_Write_Byte(MPU_ADDR,int_config_reg,0x36);
+  283   2      //
+  284   2      //            MPU_Write_Byte(MPU_ADDR,reg_bank_sel, 0x00);
+  285   2      //            res = (MPU_Read_Byte(MPU_ADDR,int_source0_reg)|bit_int_fifo_ths_int1_en);
+  286   2      //            MPU_Write_Byte(MPU_ADDR,int_source0_reg, (unsigned char)res);
+  287   2      //
+  288   2      //            MPU_Write_Byte(MPU_ADDR,reg_bank_sel, 0x00);
+  289   2      //            res = ((MPU_Read_Byte(MPU_ADDR,accel_config0_reg)&0x1F)|(bit_accel_ui_fs_sel_8g));//8g
+  290   2      //            MPU_Write_Byte(MPU_ADDR,accel_config0_reg, (unsigned char)res);
+  291   2      //
+  292   2      //            MPU_Write_Byte(MPU_ADDR,reg_bank_sel, 0x00);
+  293   2      //            res = ((MPU_Read_Byte(MPU_ADDR,accel_config0_reg)&0xF0)|bit_accel_odr_50hz);
+  294   2      //            MPU_Write_Byte(MPU_ADDR,accel_config0_reg, (unsigned char)res);
+  295   2      //
+  296   2      //            MPU_Write_Byte(MPU_ADDR,reg_bank_sel, 0x00);
+  297   2      //            res = ((MPU_Read_Byte(MPU_ADDR,gyro_config0_reg)&0x1F)|(bit_gyro_ui_fs_sel_1000dps));
+  298   2      //            MPU_Write_Byte(MPU_ADDR,gyro_config0_reg,(unsigned char)res);
+  299   2      //
+  300   2      //            MPU_Write_Byte(MPU_ADDR,reg_bank_sel, 0x00);
+  301   2      //            res = ((MPU_Read_Byte(MPU_ADDR,gyro_config0_reg)&0xF0)|bit_gyro_odr_50hz);
+  302   2      //            MPU_Write_Byte(MPU_ADDR,gyro_config0_reg, (unsigned char)res);
+  303   2      //
+  304   2      //            MPU_Write_Byte(MPU_ADDR,reg_bank_sel, 0x00);
+  305   2      //            res = MPU_Read_Byte(MPU_ADDR,pwr_mgmt0_reg)|(bit_accel_mode_ln); // Accel on in LNM
+  306   2      //            MPU_Write_Byte(MPU_ADDR,pwr_mgmt0_reg, (unsigned char)res);
+  307   2      //            delayms(1);
+  308   2      //
+  309   2      //            MPU_Write_Byte(MPU_ADDR,reg_bank_sel, 0x00);
+  310   2      //            res = MPU_Read_Byte(MPU_ADDR,pwr_mgmt0_reg)|(bit_gyro_mode_ln); // Gyro on in LNM
+  311   2      //            MPU_Write_Byte(MPU_ADDR,pwr_mgmt0_reg,(unsigned char)res);
+  312   2                  delayms(1);
+  313   2                  return 0;
+  314   2          }
+  315   1          else
+  316   1          {
+  317   2              res = MPU_Read_Byte(MPU_ADDR,WHO_AM_I);           //¶ÁÈ¡MPU6050µÄID
+  318   2              if(res != Gyro_ID)                                 //Æ÷¼þIDÕýÈ·
+  319   2                  return 1;
+  320   2      
+  321   2              res = 0;
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 6   
+
+  322   2              res += MPU_Write_Byte(MPU_ADDR,MPU_PWR_MGMT1_REG,0X80);//¸´Î»MPU6050
+  323   2              delayms_mpu(100);  //ÑÓÊ±100ms
+  324   2              res += MPU_Write_Byte(MPU_ADDR,MPU_PWR_MGMT1_REG,0X00);//»½ÐÑMPU6050
+  325   2              res += MPU_Set_Gyro_Fsr(3);                                                        //ÍÓÂÝÒÇ´«¸ÐÆ÷,¡À2000dps
+  326   2              res += MPU_Set_Accel_Fsr(1);                                               //¼ÓËÙ¶È´«¸ÐÆ÷,¡À4g
+  327   2              res += MPU_Set_Rate(1000);                                                         //ÉèÖÃ²ÉÑùÂÊ1000Hz
+  328   2              res += MPU_Write_Byte(MPU_ADDR,MPU_CFG_REG,0x02);      //ÉèÖÃÊý×ÖµÍÍ¨ÂË²¨Æ÷   98hz
+  329   2              res += MPU_Write_Byte(MPU_ADDR,MPU_INT_EN_REG,0X00);   //¹Ø±ÕËùÓÐÖÐ¶Ï
+  330   2              res += MPU_Write_Byte(MPU_ADDR,MPU_USER_CTRL_REG,0X00);//I2CÖ÷Ä£Ê½¹Ø±Õ
+  331   2              res += MPU_Write_Byte(MPU_ADDR,MPU_PWR_MGMT1_REG,0X01);//ÉèÖÃCLKSEL,PLL XÖáÎª²Î¿¼
+  332   2              res += MPU_Write_Byte(MPU_ADDR,MPU_PWR_MGMT2_REG,0X00);//¼ÓËÙ¶ÈÓëÍÓÂÝÒÇ¶¼¹¤×÷
+  333   2      
+  334   2              return 0;
+  335   2          }
+  336   1      }
+  337          
+  338          /**
+  339            * @brief    ÉèÖÃÍÓÂÝÒÇ²âÁ¿·¶Î§
+  340            *
+  341            * @param    fsr:0,¡À250dps;1,¡À500dps;2,¡À1000dps;3,¡À2000dps
+  342            *
+  343            * @return   0 £ºÉèÖÃ³É¹¦
+  344            *
+  345            * @note     ÎÞ
+  346            *
+  347            * @see      MPU_Set_Gyro_Fsr(3);                //ÍÓÂÝÒÇ´«¸ÐÆ÷,¡À2000dps
+  348            *
+  349            * @date     2019/6/12 ÐÇÆÚÈý
+  350            */
+  351          unsigned char MPU_Set_Gyro_Fsr(unsigned char fsr)
+  352          {
+  353   1              return MPU_Write_Byte(MPU_ADDR,MPU_GYRO_CFG_REG,fsr<<3);
+  354   1      }
+  355          
+  356          /**
+  357            * @brief    ÉèÖÃ¼ÓËÙ¶È¼Æ²âÁ¿·¶Î§
+  358            *
+  359            * @param    fsr:0,¡À2g;1,¡À4g;2,¡À8g;3,¡À16g
+  360            *
+  361            * @return   0£ºÉèÖÃ³É¹¦
+  362            *
+  363            * @note     ÎÞ
+  364            *
+  365            * @see      MPU_Set_Accel_Fsr(1);               //¼ÓËÙ¶È´«¸ÐÆ÷,¡À4g
+  366            *
+  367            * @date     2019/6/12 ÐÇÆÚÈý
+  368            */
+  369          unsigned char MPU_Set_Accel_Fsr(unsigned char fsr)
+  370          {
+  371   1              return MPU_Write_Byte(MPU_ADDR,MPU_ACCEL_CFG_REG,fsr<<3);
+  372   1      }
+  373          
+  374          /**
+  375            * @brief    ÉèÖÃÊý×ÖµÍÍ¨ÂË²¨
+  376            *
+  377            * @param    lpf:Êý×ÖµÍÍ¨ÂË²¨ÆµÂÊ(Hz)
+  378            *
+  379            * @return   0£ºÉèÖÃ³É¹¦
+  380            *
+  381            * @note     ÎÞ
+  382            *
+  383            * @see      MPU_Set_LPF(100);
+  384            *
+  385            * @date     2019/6/12 ÐÇÆÚÈý
+  386            */
+  387          unsigned char MPU_Set_LPF(uint16 lpf)
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 7   
+
+  388          {
+  389   1              unsigned char  dat=0;
+  390   1              if(lpf>=188)dat=1;
+  391   1              else if(lpf>=98)dat=2;
+  392   1              else if(lpf>=42)dat=3;
+  393   1              else if(lpf>=20)dat=4;
+  394   1              else if(lpf>=10)dat=5;
+  395   1              else dat=6;
+  396   1              return MPU_Write_Byte(MPU_ADDR,MPU_CFG_REG,dat);//ÉèÖÃÊý×ÖµÍÍ¨ÂË²¨Æ÷
+  397   1      }
+  398          
+  399          /**
+  400            * @brief    ÉèÖÃ²ÉÑùÂÊ
+  401            *
+  402            * @param    rate:4~1000(Hz)
+  403            *
+  404            * @return   0£ºÉèÖÃ³É¹¦
+  405            *
+  406            * @note     ÎÞ
+  407            *
+  408            * @see      MPU_Set_Rate(1000);                  //ÉèÖÃ²ÉÑùÂÊ1000Hz
+  409            *
+  410            * @date     2019/6/12 ÐÇÆÚÈý
+  411            */
+  412          unsigned char MPU_Set_Rate(uint16 rate)
+  413          {
+  414   1              unsigned char  dat;
+  415   1              if(rate>1000)rate=1000;
+  416   1              if(rate<4)rate=4;
+  417   1              dat=1000/rate-1;
+  418   1              MPU_Write_Byte(MPU_ADDR,MPU_SAMPLE_RATE_REG,dat);           //ÉèÖÃÊý×ÖµÍÍ¨ÂË²¨Æ÷
+  419   1              return MPU_Set_LPF(rate/2);                                     //×Ô¶¯ÉèÖÃLPFÎª²ÉÑùÂÊµÄÒ»°ë
+  420   1      }
+  421          
+  422          /**
+  423            * @brief    »ñÈ¡ÎÂ¶ÈÖµ
+  424            *
+  425            * @param    ÎÞ
+  426            *
+  427            * @return   ÎÂ¶ÈÖµ(À©´óÁË100±¶)
+  428            *
+  429            * @note     ÎÞ
+  430            *
+  431            * @see      signed short temp = MPU_Get_Temperature();
+  432            *
+  433            * @date     2019/6/12 ÐÇÆÚÈý
+  434            */
+  435          short MPU_Get_Temperature(void)
+  436          {
+  437   1              unsigned char  buf[2];
+  438   1              short raw;
+  439   1              float temp;
+  440   1              MPU_Read_Len(MPU_ADDR,MPU_TEMP_OUTH_REG,2,buf);
+  441   1              raw=((uint16)buf[0]<<8)|buf[1];
+  442   1              temp=21+((double)raw)/333.87;
+  443   1              return (short)temp*100;
+  444   1      }
+  445          
+  446          /**
+  447            * @brief    »ñÈ¡ÍÓÂÝÒÇÖµ
+  448            *
+  449            * @param    gx,gy,gz:ÍÓÂÝÒÇx,y,zÖáµÄÔ­Ê¼¶ÁÊý(´ø·ûºÅ)
+  450            *
+  451            * @return   0£º¶ÁÈ¡³É¹¦
+  452            *
+  453            * @note     ÎÞ
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 8   
+
+  454            *
+  455            * @see      signed short data[3];
+  456            * @see      MPU_Get_Gyroscope(&data[0], &data[1], &data[2]);
+  457            *
+  458            * @date     2019/6/12 ÐÇÆÚÈý
+  459            */
+  460          unsigned char MPU_Get_Gyroscope(signed short *gx,signed short *gy,signed short *gz)
+  461          {
+  462   1              unsigned char  buf[6],res;
+  463   1              res=MPU_Read_Len(MPU_ADDR,MPU_GYRO_XOUTH_REG,6,buf);
+  464   1              if(res==0)
+  465   1              {
+  466   2                      *gx=((uint16)buf[0]<<8)|buf[1];
+  467   2                      *gy=((uint16)buf[2]<<8)|buf[3];
+  468   2                      *gz=((uint16)buf[4]<<8)|buf[5];
+  469   2              }
+  470   1              return res;
+  471   1      }
+  472          
+  473          /**
+  474            * @brief    »ñÈ¡¼ÓËÙ¶ÈÖµ
+  475            *
+  476            * @param    ax,ay,az:ÍÓÂÝÒÇx,y,zÖáµÄÔ­Ê¼¶ÁÊý(´ø·ûºÅ)
+  477            *
+  478            * @return   0£º¶ÁÈ¡³É¹¦
+  479            *
+  480            * @note     ÎÞ
+  481            *
+  482            * @see      signed short data[3];
+  483            * @see      MPU_Get_Accelerometer(&data[0], &data[1], &data[2]);
+  484            *
+  485            * @date     2019/6/12 ÐÇÆÚÈý
+  486            */
+  487          unsigned char MPU_Get_Accelerometer(signed short *ax,signed short *ay,signed short *az)
+  488          {
+  489   1              unsigned char  buf[6],res;
+  490   1              res=MPU_Read_Len(MPU_ADDR,MPU_ACCEL_XOUTH_REG,6,buf);
+  491   1              if(res==0)
+  492   1              {
+  493   2                      *ax=((uint16)buf[0]<<8)|buf[1];
+  494   2                      *ay=((uint16)buf[2]<<8)|buf[3];
+  495   2                      *az=((uint16)buf[4]<<8)|buf[5];
+  496   2              }
+  497   1              return res;
+  498   1      }
+  499          
+  500          /**
+  501            * @brief    »ñÈ¡ ¼ÓËÙ¶ÈÖµ ½ÇËÙ¶ÈÖµ
+  502            *
+  503            * @param    ax,ay,az:ÍÓÂÝÒÇx,y,zÖáµÄÔ­Ê¼¶ÁÊý(´ø·ûºÅ)
+  504            * @param    gx,gy,gz:ÍÓÂÝÒÇx,y,zÖáµÄÔ­Ê¼¶ÁÊý(´ø·ûºÅ)
+  505            *
+  506            * @return   0£º¶ÁÈ¡³É¹¦
+  507            *
+  508            * @note     ÎÞ
+  509            *
+  510            * @see      signed short data[6];
+  511            * @see      ICM_Get_Raw_data(&data[0], &data[1], &data[2],&data[3], &data[4], &data[5]);
+  512            *
+  513            */
+  514          unsigned char MPU_Get_Raw_data(signed short *ax,signed short *ay,signed short *az,signed short *gx,signed
+             - short *gy,signed short *gz)
+  515          {
+  516   1              unsigned char  buf[14],res;
+  517   1              if(IIC_ICM42605)
+  518   1              {
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 9   
+
+  519   2                      res=MPU_Read_Len(MPU_ADDR,0X1F,12,buf);
+  520   2                      if(res==0)
+  521   2                      {
+  522   3                              *ax=((uint16)buf[0]<<8)|buf[1];
+  523   3                              *ay=((uint16)buf[2]<<8)|buf[3];
+  524   3                              *az=((uint16)buf[4]<<8)|buf[5];
+  525   3                              *gx=((uint16)buf[6]<<8)|buf[7];
+  526   3                              *gy=((uint16)buf[8]<<8)|buf[9];
+  527   3                              *gz=((uint16)buf[10]<<8)|buf[11];
+  528   3                      }
+  529   2                      return res;
+  530   2              }
+  531   1              else
+  532   1              {
+  533   2                      res=MPU_Read_Len(MPU_ADDR,MPU_ACCEL_XOUTH_REG,14,buf);
+  534   2                      if(res==0)
+  535   2                      {
+  536   3                              *ax=((uint16)buf[0]<<8)|buf[1];
+  537   3                              *ay=((uint16)buf[2]<<8)|buf[3];
+  538   3                              *az=((uint16)buf[4]<<8)|buf[5];
+  539   3                              *gx=((uint16)buf[8]<<8)|buf[9];
+  540   3                              *gy=((uint16)buf[10]<<8)|buf[11];
+  541   3                              *gz=((uint16)buf[11]<<8)|buf[13];
+  542   3                      }
+  543   2                      return res;
+  544   2              }
+  545   1      }
+  546          
+  547          /**
+  548          * @brief    »ñÈ¡´ÅÁ¦¼ÆÖµ
+  549          *
+  550          * @param    mx,my,mz:´ÅÁ¦¼ÆÒÇx,y,zÖáµÄÔ­Ê¼¶ÁÊý(´ø·ûºÅ)
+  551          *
+  552          * @return   0£º¶ÁÈ¡³É¹¦
+  553          *
+  554          * @note     ÎÞ
+  555          *
+  556          * @see      signed short data[3];
+  557          * @see      MPU9250_Get_Magnetometer(&data[0], &data[1], &data[2]);
+  558          *
+  559          * @date     2020/12/15 ÐÇÆÚ¶þ
+  560          */
+  561          unsigned char MPU9250_Get_Magnetometer(short *mx,short *my,short *mz)
+  562          {
+  563   1      
+  564   1        unsigned char  buf[6],res;
+  565   1        res=MPU_Read_Len(AK8963_ADDR,MPU_MAG_XOUTL_REG,6,buf);
+  566   1        if(res==0)
+  567   1        {
+  568   2          *mx=((uint16)buf[1]<<8)|buf[0];
+  569   2          *my=((uint16)buf[3]<<8)|buf[2];
+  570   2          *mz=((uint16)buf[5]<<8)|buf[4];
+  571   2        }
+  572   1        MPU_Read_Byte(AK8963_ADDR,MPU_MAG_ST2_REG);
+  573   1        return res;
+  574   1      }
+  575          
+  576          /**
+  577            * @brief    IIC Á¬Ðø¶Á
+  578            *
+  579            * @param    addr:Æ÷¼þµØÖ·
+  580            * @param    reg :Òª¶ÁÈ¡µÄ¼Ä´æÆ÷µØÖ·
+  581            * @param    len :Òª¶ÁÈ¡µÄ³¤¶È
+  582            * @param    buf :¶ÁÈ¡µ½µÄÊý¾Ý´æ´¢Çø
+  583            *
+  584            * @return   0 £º¶ÁÈ¡³É¹¦
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 10  
+
+  585            *
+  586            * @note     µ×²ãÇý¶¯ ÒÆÖ²Ê±ÐèÒªÐÞ¸Ä
+  587            *
+  588            * @see      unsigned char buf[14];
+  589            * @see      MPU_Read_Len(MPU_ADDR,MPU_ACCEL_XOUTH_REG,14,buf);
+  590            *
+  591            * @date     2019/6/12 ÐÇÆÚÈý
+  592            */
+  593          unsigned char MPU_Read_Len(unsigned char addr,unsigned char reg,unsigned char len,unsigned char *buf)
+  594          {
+  595   1              return IIC_ReadMultByteFromSlave(addr<<1, reg, len, buf);
+  596   1      }
+  597          
+  598          /**
+  599            * @brief    IIC Á¬ÐøÐ´
+  600            *
+  601            * @param    addr:Æ÷¼þµØÖ·
+  602            * @param    reg :ÒªÐ´ÈëµÄ¼Ä´æÆ÷µØÖ·
+  603            * @param    len :ÒªÐ´ÈëµÄ³¤¶È
+  604            * @param    buf :Ð´Èëµ½µÄÊý¾Ý´æ´¢Çø
+  605            *
+  606            * @return   0 £ºÐ´Èë³É¹¦
+  607            *
+  608            * @note     µ×²ãÇý¶¯ ÒÆÖ²Ê±ÐèÒªÐÞ¸Ä
+  609            *
+  610            * @see      unsigned char buf[14];
+  611            * @see      MPU9250_Write_Len(MPU9250_ADDR,MPU_ACCEL_XOUTH_REG,14,buf);
+  612            *
+  613            * @date     2021/7/1 ÐÇÆÚËÄ
+  614            */
+  615          unsigned char MPU_Write_Len(unsigned char addr,unsigned char reg,unsigned char len,unsigned char *buf)
+  616          {
+  617   1              return IIC_WriteMultByteToSlave(addr<<1, reg, len, buf);
+  618   1      }
+  619          
+  620          /**
+  621            * @brief    IIC Ð´Ò»¸ö¼Ä´æÆ÷
+  622            *
+  623            * @param    addr  :Æ÷¼þµØÖ·
+  624            * @param    reg   :¼Ä´æÆ÷µØÖ·
+  625            * @param    value :ÒªÐ´ÈëµÄÖµ
+  626            *
+  627            * @return   0 £º¶ÁÈ¡³É¹¦
+  628            *
+  629            * @note     µ×²ãÇý¶¯ ÒÆÖ²Ê±ÐèÒªÐÞ¸Ä
+  630            *
+  631            * @see      MPU_Write_Byte(MPU_ADDR,MPU_SAMPLE_RATE_REG,1);
+  632            *
+  633            * @date     2019/6/12 ÐÇÆÚÈý
+  634            */
+  635          unsigned char MPU_Write_Byte(unsigned char addr,unsigned char reg,unsigned char value)
+  636          {
+  637   1              return IIC_WriteByteToSlave(addr<<1, reg, value);
+  638   1      }
+  639          
+  640          /**
+  641            * @brief    IIC ¶ÁÒ»¸ö¼Ä´æÆ÷
+  642            *
+  643            * @param    addr  :Æ÷¼þµØÖ·
+  644            * @param    reg   :¼Ä´æÆ÷µØÖ·
+  645            *
+  646            * @return   ¶ÁÈ¡µÄÖµ
+  647            *
+  648            * @note     µ×²ãÇý¶¯ ÒÆÖ²Ê±ÐèÒªÐÞ¸Ä
+  649            *
+  650            * @see      MPU_Read_Byte(MPU_ADDR,WHO_AM_I);
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 11  
+
+  651            *
+  652            * @date     2019/6/12 ÐÇÆÚÈý
+  653            */
+  654          unsigned char MPU_Read_Byte(unsigned char addr,unsigned char reg)
+  655          {
+  656   1              unsigned char value[1];
+  657   1              MPU_Read_Len(addr, reg, 1, value);
+  658   1              return value[0];
+  659   1      }
+  660          /**
+  661            * @brief    LQLSM6DSRIIC¶ÁÈ¡IDº¯Êý
+  662            *
+  663            * @param    
+  664            *
+  665            *
+  666            * @note     ÎÞ
+  667            *
+  668            * @see      res = LQ_IIC_LSM60DSR_GetID(LSM6DSR_ADDR, WHO_AM_LSM6D); 
+  669            * @see      
+  670            *
+  671            * @date     2023/4/10 ÐÇÆÚÒ»
+  672            */
+  673          unsigned char LQ_IIC_LSM60DSR_GetID(unsigned char dev, unsigned char reg)
+  674          {
+  675   1          unsigned char ID[1];
+  676   1          IIC_ReadMultByteFromSlave(dev, reg, 1, ID);
+  677   1          return ID[0];
+  678   1      }
+  679          /**
+  680            * @brief    LQLSM6DSRIIC³õÊ¼»¯º¯Êý
+  681            *
+  682            * @param    
+  683            *
+  684            *
+  685            * @note     ÎÞ
+  686            *
+  687            * @see      LQ_IIC_LSM60DSR_Init();
+  688            * @see      
+  689            *
+  690            * @date     2023/4/10 ÐÇÆÚÒ»
+  691            */
+  692          void LQ_IIC_LSM60DSR_Init(void)
+  693          {
+  694   1          //¼ÓËÙ¶È¼Æ52HZ£¨ÇãÐ±½Ç¼ì²â¹¦ÄÜ¹¤×÷ÔÚ26HZ£¬Òò´Ë¼ÓËÙ¶È¼ÆODR±ØÐëÉèÖÃÎª>=26hz£©,2gÁ¿³Ì¡£
+  695   1          IIC_WriteByteToSlave(LSM6DSR_ADDR,LSM6DSR_CTRL1_XL,0X20);
+  696   1          //Ê¹ÄÜ¼ÓËÙ¶È¼Æx,y,zÖá
+  697   1          IIC_WriteByteToSlave(LSM6DSR_ADDR,LSM6DSR_CTRL9_XL,0X38);
+  698   1          //ÍÓÂÝÒÇµçÆ½´¥·¢£¬¼ÓËÙ¶È¼Æ¸ßÐÔÄÜÊ¹ÄÜ
+  699   1          IIC_WriteByteToSlave(LSM6DSR_ADDR,LSM6DSR_CTRL6_C,0X40|0x10);
+  700   1          //ÍÓÂÝÒÇ¸ßÐÔÄÜÊ¹ÄÜ
+  701   1          IIC_WriteByteToSlave(LSM6DSR_ADDR,LSM6DSR_CTRL7_G,0X80);
+  702   1          //¼ÓËÙ¶È¼ÆINT2Òý½ÅÊ§ÄÜ,ÍÓÂÝÒÇÊý¾ÝINT2Ê¹ÄÜ
+  703   1          IIC_WriteByteToSlave(LSM6DSR_ADDR,LSM6DSR_INT2_CTRL,0X03);
+  704   1          //ÍÓÂÝÒÇ12.5hz  2000dps
+  705   1          IIC_WriteByteToSlave(LSM6DSR_ADDR,LSM6DSR_CTRL2_G,0X1C);
+  706   1          //Ê¹ÄÜÍÓÂÝÒÇx,y,zÖá
+  707   1          IIC_WriteByteToSlave(LSM6DSR_ADDR,LSM6DSR_CTRL10_C,0X38);
+  708   1      
+  709   1      //    //WAKE_UP INTERRUPT Configuration
+  710   1      //    MPU_Write_Byte(LSM6DSR_ADDR, LSM6DSR_CTRL1_XL,0x60);
+  711   1      //    MPU_Write_Byte(TAP_CFG,0x90);
+  712   1      //    MPU_Write_Byte(WAKE_UP_DUR,0x00);
+  713   1      //    MPU_Write_Byte(WAKE_UP_THS,0x02);
+  714   1      //    MPU_Write_Byte(MD1_CFG,0x20);
+  715   1      //    //6D Orientation Configuration
+  716   1      //    MPU_Write_Byte(TAP_THS_6D,0x40);
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 12  
+
+  717   1      //    MPU_Write_Byte(CTRL8_XL,0x01);
+  718   1      }
+  719          /**
+  720            * @brief    LQLSM6DSRIIC¶ÁÈ¡º¯Êý
+  721            *
+  722            * @param    
+  723            *
+  724            * @param    ax,ay,az:ÍÓÂÝÒÇx,y,zÖáµÄÔ­Ê¼¶ÁÊý(´ø·ûºÅ)
+  725            * @param    gx,gy,gz:ÍÓÂÝÒÇx,y,zÖáµÄÔ­Ê¼¶ÁÊý(´ø·ûºÅ)
+  726            *
+  727            * @note     ÎÞ
+  728            *
+  729            * @see      LQ_IIC_LSM60DSR_Read(&accelerat_X, &accelerat_Y, &accelerat_Z, &gyro_X, &gyro_Y, &gyro_Z);
+  730            * @see      
+  731            *
+  732            * @date     2023/4/10 ÐÇÆÚÒ»
+  733            */
+  734          void LQ_IIC_LSM60DSR_Read(signed short *ax,signed short *ay,signed short *az,signed short *gx,signed shor
+             -t *gy,signed short *gz)
+  735          {
+  736   1         unsigned char buf_L[1], buf_H[1];
+  737   1          IIC_ReadMultByteFromSlave(LSM6DSR_ADDR, LSM6DSR_OUTX_L_GYRO, 1, buf_L);
+  738   1        IIC_ReadMultByteFromSlave(LSM6DSR_ADDR, LSM6DSR_OUTX_H_GYRO, 1, buf_H);
+  739   1          *gx=((unsigned short )buf_H[0]<<8)|buf_L[0];
+  740   1          IIC_ReadMultByteFromSlave(LSM6DSR_ADDR, LSM6DSR_OUTY_L_GYRO, 1, buf_L);
+  741   1        IIC_ReadMultByteFromSlave(LSM6DSR_ADDR, LSM6DSR_OUTY_H_GYRO, 1, buf_H);
+  742   1          *gy=((unsigned short )buf_H[0]<<8)|buf_L[0];
+  743   1          IIC_ReadMultByteFromSlave(LSM6DSR_ADDR, LSM6DSR_OUTZ_L_GYRO, 1, buf_L);
+  744   1        IIC_ReadMultByteFromSlave(LSM6DSR_ADDR, LSM6DSR_OUTZ_H_GYRO, 1, buf_H);
+  745   1          *gz=((unsigned short )buf_H[0]<<8)|buf_L[0];
+  746   1          IIC_ReadMultByteFromSlave(LSM6DSR_ADDR, LSM6DSR_OUTX_L_ACC, 1, buf_L);
+  747   1        IIC_ReadMultByteFromSlave(LSM6DSR_ADDR, LSM6DSR_OUTX_H_ACC, 1, buf_H);
+  748   1          *ax=((unsigned short )buf_H[0]<<8)|buf_L[0];
+  749   1          IIC_ReadMultByteFromSlave(LSM6DSR_ADDR, LSM6DSR_OUTY_L_ACC, 1, buf_L);
+  750   1        IIC_ReadMultByteFromSlave(LSM6DSR_ADDR, LSM6DSR_OUTY_H_ACC, 1, buf_H);
+  751   1          *ay=((unsigned short )buf_H[0]<<8)|buf_L[0];
+  752   1          IIC_ReadMultByteFromSlave(LSM6DSR_ADDR, LSM6DSR_OUTZ_L_ACC, 1, buf_L);
+  753   1        IIC_ReadMultByteFromSlave(LSM6DSR_ADDR, LSM6DSR_OUTZ_H_ACC, 1, buf_H);
+  754   1          *az=((unsigned short )buf_H[0]<<8)|buf_L[0];
+  755   1      }
+  756          /**
+  757            * @brief    LQLSM6DSRIIC²âÊÔº¯Êý
+  758            *
+  759            * @param    
+  760            *
+  761            * @return   ÎÞ
+  762            *
+  763            * @note     ÎÞ
+  764            *
+  765            * @see      Test_IIC_LQLSM6DSR();
+  766            * @see      
+  767            *
+  768            * @date     2023/4/10 ÐÇÆÚÒ»
+  769            */
+  770          void Test_IIC_LQLSM6DSR(void)
+  771          {
+  772   1          signed short accelerat_X, accelerat_Y, accelerat_Z;
+  773   1          signed short gyro_X, gyro_Y, gyro_Z;
+  774   1          unsigned char res;
+  775   1          char  txt[30];
+  776   1      
+  777   1          IIC_Init();                  //IIC³õÊ¼»¯//IIC³õÊ¼»¯
+  778   1          delayms(100);
+  779   1      
+  780   1      
+  781   1          
+C251 COMPILER V5.60.0,  LQ_IIC_Gyro                                                        27/05/24  09:23:05  PAGE 13  
+
+  782   1      
+  783   1          OLED_Init();                //LCD³õÊ¼»¯
+  784   1          delayms(100);
+  785   1          OLED_CLS();                 //LCDÇåÆÁ
+  786   1      
+  787   1          /*¶ÁÈ¡Éè±¸ID*/
+  788   1          res = LQ_IIC_LSM60DSR_GetID(LSM6DSR_ADDR, WHO_AM_LSM6D); 
+  789   1                
+  790   1         OLED_P14x16Str(8,0,(unsigned char*)"±±¾©ÁúÇñÖÇÄÜ¿Æ¼¼");              //×Ö·û´®ÏÔÊ¾
+  791   1               sprintf(txt,"ID:0X%2x",res);
+  792   1         OLED_P6x8Str(70,2,txt);     // ×Ö·û´®ÏÔÊ¾      
+  793   1          
+  794   1         LQ_IIC_LSM60DSR_Init();
+  795   1          while(1)
+  796   1          {
+  797   2              LQ_IIC_LSM60DSR_Read(&accelerat_X, &accelerat_Y, &accelerat_Z, &gyro_X, &gyro_Y, &gyro_Z);
+  798   2      /*ÆÁÄ»ÏÔÊ¾Ñ¡Ôñ*/
+  799   2      
+  800   2              sprintf((char*)txt,"ax:%06d",accelerat_X);
+  801   2              OLED_P6x8Str(0,2,txt);
+  802   2              sprintf((char*)txt,"ay:%06d",accelerat_Y);
+  803   2              OLED_P6x8Str(0,3,txt);
+  804   2              sprintf((char*)txt,"az:%06d",accelerat_Z);
+  805   2              OLED_P6x8Str(0,4,txt);
+  806   2              sprintf((char*)txt,"gx:%06d",gyro_X);
+  807   2              OLED_P6x8Str(0,5,txt);
+  808   2              sprintf((char*)txt,"gy:%06d",gyro_Y);
+  809   2              OLED_P6x8Str(0,6,txt);
+  810   2              sprintf((char*)txt,"gz:%06d",gyro_Z);
+  811   2              OLED_P6x8Str(0,7,txt);
+  812   2              delayms(10);
+  813   2          }
+  814   1      }
+  815          
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =      3439     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =        25        298
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =       200     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
